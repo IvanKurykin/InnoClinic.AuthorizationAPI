@@ -12,6 +12,7 @@ public class AuthRepository(UserManager<User> userManager, SignInManager<User> s
         await userManager.AddToRoleAsync(user, role);
         return result;
     }
+
     public async Task<SignInResult> LoginAsync(string email, string password, bool rememberMe) =>
         await signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
 }
