@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace BLL.Validators;
 
-public class LoginDTOValidator : AbstractValidator<LogInDto>
+public class LoginDtoValidator : AbstractValidator<LogInDto>
 {
-    public LoginDTOValidator()
+    public LoginDtoValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Please, enter the email")

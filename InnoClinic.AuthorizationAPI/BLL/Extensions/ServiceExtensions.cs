@@ -8,9 +8,9 @@ namespace BLL.Extensions;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddBLLServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddBusinessLoginLayerServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDALServices(configuration);
+        services.AddDataAccessLayerServices(configuration);
         services.AddScoped<IAuthService, AuthService>();
 
         return services;

@@ -11,7 +11,7 @@ namespace DAL.Extensions;
 
 public static class RepositoryExtensions
 {
-    public static IServiceCollection AddDALServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDataAccessLayerServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
