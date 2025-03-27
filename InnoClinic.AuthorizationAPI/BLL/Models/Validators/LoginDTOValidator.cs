@@ -13,11 +13,8 @@ public class LoginDTOValidator : AbstractValidator<LogInDTO>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Please, enter the password")
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters")
-            .MaximumLength(15).WithMessage("Password must not exceed 15 characters")
-            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-            .Matches(@"[0-9]").WithMessage("Password must contain at least one digit")
-            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character");
+            .Length(6, 15).WithMessage("Password must be 6-15 characters")
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$")
+            .WithMessage("Password must contain at least one uppercase, lowercase, digit and special character");
     }
 }
