@@ -1,9 +1,9 @@
-﻿using BLL.Models.DTOs;
+﻿using BLL.DTO;
 using FluentValidation;
 
-namespace BLL.Models.Validators;
+namespace BLL.Validators;
 
-public class RegisterDTOValidator : AbstractValidator<RegisterDTO>
+public class RegisterDTOValidator : AbstractValidator<RegisterDto>
 {
     public RegisterDTOValidator()
     {
