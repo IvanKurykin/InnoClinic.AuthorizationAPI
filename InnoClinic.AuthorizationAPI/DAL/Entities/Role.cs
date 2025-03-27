@@ -2,6 +2,6 @@
 
 namespace DAL.Entities;
 
-public sealed class User : IdentityUser
+public class Role : IdentityRole
 {
 }
