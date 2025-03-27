@@ -12,18 +12,18 @@ public class RoleConfiguration : IEntityTypeConfiguration<IdentityRole>
         builder.HasData(
            new IdentityRole
            {
-               Name = RoleConstants.Admin,
-               NormalizedName = RoleConstants.Admin.ToUpper()
+               Name = Roles.Admin,
+               NormalizedName = Roles.Admin.ToUpper()
            },
            new IdentityRole
            {
-               Name = RoleConstants.Doctor,
-               NormalizedName = RoleConstants.Doctor.ToUpper()
+               Name = Roles.Doctor,
+               NormalizedName = Roles.Doctor.ToUpper()
            },
            new IdentityRole
            {
-               Name = RoleConstants.Patient,
-               NormalizedName = RoleConstants.Patient.ToUpper()
+               Name = Roles.Patient,
+               NormalizedName = Roles.Patient.ToUpper()
            }
        );
     }

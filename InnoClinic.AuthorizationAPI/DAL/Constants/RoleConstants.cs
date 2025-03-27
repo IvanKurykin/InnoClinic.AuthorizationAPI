@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace DAL.Constants;
 
-namespace DAL.Constants;
-
-public static class RoleConstants
+public static class Roles
 {
     public const string Admin = "Admin";
     public const string Doctor = "Doctor";
