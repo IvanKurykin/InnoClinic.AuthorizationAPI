@@ -5,9 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Context;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<User, Role, string>
 {
-    public ApplicationDbContext() { }
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -16,5 +15,4 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
     }
-    public DbSet<User> Users { get; set; }
 }
