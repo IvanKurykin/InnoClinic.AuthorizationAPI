@@ -6,5 +6,5 @@ namespace BLL.Interfaces;
 public interface IAuthService
 {
     Task<IdentityResult> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default);
-    Task<SignInResult> LoginAsync(LogInDto dto, CancellationToken cancellationToken = default);
+    Task<SignInResult> LogInAsync(LogInDto dto, CancellationToken cancellationToken = default);
 }
