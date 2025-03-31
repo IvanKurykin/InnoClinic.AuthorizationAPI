@@ -2,5 +2,5 @@
 
 public class Messages
 {
-    public const string UserIsNotLoggedIn = "Either an email or a password is incorrect";
+    public const string UserIsNotLoggedIn = "Either the email or the password is incorrect";
 }
