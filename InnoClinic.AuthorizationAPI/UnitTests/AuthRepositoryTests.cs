@@ -2,10 +2,14 @@
 using DAL.Entities;
 using DAL.Repositories;
 using FluentAssertions;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using Xunit.Sdk;
 
 namespace UnitTests;
 
@@ -19,16 +23,29 @@ public class AuthRepositoryTests
     public AuthRepositoryTests()
     {
         var storeMock = new Mock<IUserStore<User>>();
-        _userManager = new Mock<UserManager<User>>(storeMock.Object, null, null, null, null, null, null, null, null); 
+        _userManager = new Mock<UserManager<User>>(storeMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
-       
-        _signInManager = new Mock<SignInManager<User>>(_userManager.Object, Mock.Of<IHttpContextAccessor>(), Mock.Of<IUserClaimsPrincipalFactory<User>>(), null,   null,   null); 
+        var contextAccessor = new Mock<IHttpContextAccessor>();
+        var userPrincipalFactory = new Mock<IUserClaimsPrincipalFactory<User>>();
+        var options = new Mock<IOptions<IdentityOptions>>();
+        var logger = new Mock<ILogger<SignInManager<User>>>();
+        var schemes = new Mock<IAuthenticationSchemeProvider>();
+        var confirmation = new Mock<IUserConfirmation<User>>();
 
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        _signInManager = new Mock<SignInManager<User>>(
+            _userManager.Object,
+            contextAccessor.Object,
+            userPrincipalFactory.Object,
+            options.Object,
+            logger.Object,
+            schemes.Object,
+            confirmation.Object);
+
+        var optionsDb = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _dbContext = new ApplicationDbContext(options);
+        _dbContext = new ApplicationDbContext(optionsDb);
 
         _authRepository = new AuthRepository(_userManager.Object, _dbContext, _signInManager.Object);
     }
@@ -38,8 +55,8 @@ public class AuthRepositoryTests
     {
         var user = new User
         {
-            Email = "test@example.com",
-            UserName = "test@example.com"
+            Email = TestConstans.TestUserEmail,
+            UserName = TestConstans.TestUserName
         };
         var password = "Test@123";
         var cancellationToken = CancellationToken.None;
@@ -55,8 +72,8 @@ public class AuthRepositoryTests
     [Fact]
     public async Task LogInAsync()
     {
-        var userName = "test@example.com";
-        var password = "Test@123";
+        var userName = TestConstans.TestUserName;
+        var password = TestConstans.TestUserPassword;
         var rememberMe = false;
         var cancellationToken = new CancellationToken();
 
@@ -71,8 +88,9 @@ public class AuthRepositoryTests
     [Fact]
     public async Task GetUserByEmailAsync()
     {
-        var email = "existing@example.com";
-        var expectedUser = new User { Email = email, UserName = "existing" };
+        const string email = "existing@example.com";
+        const string existingEmail = "existing";
+        var expectedUser = new User { Email = email, UserName = existingEmail };
         var cancellationToken = new CancellationToken();
 
         _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(expectedUser);
