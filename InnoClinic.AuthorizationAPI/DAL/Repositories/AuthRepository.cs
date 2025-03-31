@@ -17,9 +17,9 @@ public class AuthRepository(UserManager<User> userManager, ApplicationDbContext 
         return IdentityResult.Success;
     }
 
-    public async Task<SignInResult> LogInAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-        return await signInManager.PasswordSignInAsync(user?.UserName, password, rememberMe, lockoutOnFailure: false);
-    }
+    public async Task<SignInResult> LogInAsync(string userName, string password, bool rememberMe, CancellationToken cancellationToken = default) =>
+        await signInManager.PasswordSignInAsync(userName, password, rememberMe, lockoutOnFailure: false); 
+
+    public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        await userManager.FindByEmailAsync(email);
 }

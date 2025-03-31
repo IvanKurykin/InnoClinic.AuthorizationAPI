@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using BLL.DTO;
+using BLL.Helpers.Constants;
 using FluentValidation;
 
 namespace BLL.Validators;
@@ -27,7 +28,7 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
         if (string.IsNullOrWhiteSpace(email)) return false;
 
         return Regex.IsMatch(email,
-            @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+            ValidationPatterns.EmailRegex,
             RegexOptions.IgnoreCase);
     }
 }

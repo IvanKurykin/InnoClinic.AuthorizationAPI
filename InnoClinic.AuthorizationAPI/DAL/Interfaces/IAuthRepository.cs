@@ -7,4 +7,5 @@ public interface IAuthRepository
 {
     Task<IdentityResult> RegisterAsync(User user, string password, CancellationToken cancellationToken = default);
     Task<SignInResult> LogInAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default);
+    Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

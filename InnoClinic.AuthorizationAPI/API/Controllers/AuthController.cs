@@ -1,8 +1,6 @@
 ﻿using BLL.DTO;
 using BLL.Interfaces;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace API.Controllers;
 
@@ -13,13 +11,21 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost("register")]
-    public async Task<IdentityResult> RegisterAsync([FromBody] RegisterDto dto, CancellationToken cancellationToken) =>
-        await authService.RegisterAsync(dto, cancellationToken);
+    public async Task<IActionResult> RegisterAsync([FromBody] RegisterDto dto, CancellationToken cancellationToken)
+    {
+        var result = await authService.RegisterAsync(dto, cancellationToken);
+        if (!result.Succeeded) return BadRequest(new {Message = Messages.UserIsNotRegistered });
+        return Ok(new { Message = Messages.UserRegisteredSuccessfully });
+    }
 
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [HttpPost("login")]
-    public async Task<SignInResult> LogInAsyn([FromBody] LogInDto dto, CancellationToken cancellationToken) =>
-        await authService.LogInAsync(dto, cancellationToken);
+    public async Task<IActionResult> LogInAsynс([FromBody] LogInDto dto, CancellationToken cancellationToken)
+    {
+        var result = await authService.LogInAsync(dto, cancellationToken);
+        if (!result.Succeeded) return BadRequest(new {Message = Messages.UserIsNotLoggedIn});
+        return Ok(new {Nessage = Messages.UserLoggedInSuccessfully});
+    }
 }
