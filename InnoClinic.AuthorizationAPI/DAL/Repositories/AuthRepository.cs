@@ -1,18 +1,25 @@
-﻿using DAL.Entities;
+﻿using DAL.Constants;
+using DAL.Context;
+using DAL.Entities;
 using DAL.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace DAL.Repositories;
 
-public class AuthRepository(UserManager<User> userManager, SignInManager<User> signInManager) : IAuthRepository
+public class AuthRepository(UserManager<User> userManager, ApplicationDbContext dbContext, SignInManager<User> signInManager) : IAuthRepository
 {
-    public async Task<IdentityResult> RegisterAsync(User user, string password, string role)
+    public async Task<IdentityResult> RegisterAsync(User user, string password, CancellationToken cancellationToken = default)
     {
-        var result = await userManager.CreateAsync(user, password);
-        await userManager.AddToRoleAsync(user, role);
-        return result;
+        await userManager.CreateAsync(user, password);
+        await dbContext.SaveChangesAsync();
+        await userManager.AddToRoleAsync(user, Roles.Patient);
+
+        return IdentityResult.Success;
     }
 
-    public async Task<SignInResult> LoginAsync(string email, string password, bool rememberMe) =>
-        await signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
+    public async Task<SignInResult> LogInAsync(string userName, string password, bool rememberMe, CancellationToken cancellationToken = default) =>
+        await signInManager.PasswordSignInAsync(userName, password, rememberMe, lockoutOnFailure: false); 
+
+    public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        await userManager.FindByEmailAsync(email);
 }
