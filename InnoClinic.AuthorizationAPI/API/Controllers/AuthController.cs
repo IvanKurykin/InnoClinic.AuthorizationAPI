@@ -14,8 +14,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterDto dto, CancellationToken cancellationToken)
     {
         var result = await authService.RegisterAsync(dto, cancellationToken);
-        if (!result.Succeeded) return BadRequest(new {Message = Messages.UserIsNotRegistered });
-        return Ok(new { Message = Messages.UserRegisteredSuccessfully });
+        if (!result.Succeeded) return BadRequest(result.Errors);
+        return Ok(result);
     }
 
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -25,7 +25,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> LogInAsynс([FromBody] LogInDto dto, CancellationToken cancellationToken)
     {
         var result = await authService.LogInAsync(dto, cancellationToken);
-        if (!result.Succeeded) return BadRequest(new {Message = Messages.UserIsNotLoggedIn});
+        if (!result.Succeeded) return Unauthorized(new {Message = Messages.UserIsNotLoggedIn});
         return Ok(new {Nessage = Messages.UserLoggedInSuccessfully});
     }
 }
