@@ -2,6 +2,6 @@
 
 namespace DAL.Entities;
 
-public class Role : IdentityRole
+public sealed class Role : IdentityRole
 {
 }

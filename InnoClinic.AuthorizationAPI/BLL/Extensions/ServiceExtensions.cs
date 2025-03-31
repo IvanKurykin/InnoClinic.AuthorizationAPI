@@ -4,7 +4,6 @@ using BLL.Services;
 using DAL.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace BLL.Extensions;
 

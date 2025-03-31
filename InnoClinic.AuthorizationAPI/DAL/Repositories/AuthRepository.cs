@@ -11,7 +11,7 @@ public class AuthRepository(UserManager<User> userManager, ApplicationDbContext 
     public async Task<IdentityResult> RegisterAsync(User user, string password, CancellationToken cancellationToken = default)
     {
         await userManager.CreateAsync(user, password);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
         await userManager.AddToRoleAsync(user, Roles.Patient);
 
         return IdentityResult.Success;
