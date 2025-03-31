@@ -25,7 +25,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> LogInAsynс([FromBody] LogInDto dto, CancellationToken cancellationToken)
     {
         var result = await authService.LogInAsync(dto, cancellationToken);
-        if (!result.Succeeded) return Unauthorized(new {Message = Messages.UserIsNotLoggedIn});
+        if (!result.Succeeded) return Unauthorized(Messages.UserIsNotLoggedIn);
         return Ok(result);
     }
 }
