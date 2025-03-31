@@ -26,6 +26,6 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var result = await authService.LogInAsync(dto, cancellationToken);
         if (!result.Succeeded) return Unauthorized(new {Message = Messages.UserIsNotLoggedIn});
-        return Ok(new {Nessage = Messages.UserLoggedInSuccessfully});
+        return Ok(result);
     }
 }
