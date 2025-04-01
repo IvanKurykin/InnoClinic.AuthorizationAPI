@@ -27,7 +27,7 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
             .NotEmpty().WithMessage("Please, reenter the password")
             .Must((model, field) => field == model.Password);
     }
-    private bool BeValidEmail(string? email)
+    private static bool BeValidEmail(string? email)
     {
         if (string.IsNullOrWhiteSpace(email)) return false;
 

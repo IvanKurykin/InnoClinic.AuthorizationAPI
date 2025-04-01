@@ -16,7 +16,7 @@ public class LoginDtoValidator : AbstractValidator<LogInDto>
         RuleFor(x => x.Password)
              .NotEmpty().WithMessage("Please, enter the password");
     }
-    private bool BeValidEmail(string? email)
+    private static bool BeValidEmail(string? email)
     {
         if (string.IsNullOrWhiteSpace(email)) return false;
         
