@@ -28,7 +28,7 @@ jobs:
 
       - name: Run SonarQube analysis
         run: |
-          dotnet sonarscanner begin /k:"InnoClinic_AuthorizationAPI" /o:"IvanKurykin" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet sonarscanner begin /k:"InnoClinic.AuthorizationAPI" /o:"IvanKurykin" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --collect:"XPlat Code Coverage" --no-build --logger "trx;LogFileName=testresults.trx"
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
