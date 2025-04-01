@@ -13,41 +13,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
-      - name: Setup Java
+          fetch-depth: 0
+
+      - name: Установка Java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup .NET 8
+      - name: Установка .NET 8
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0'
 
-      - name: Install SonarScanner
+      - name: Восстановление зависимостей
+        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
+
+      - name: Установка SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: Install Coverlet
+      - name: Установка Coverlet (для сбора покрытия)
         run: dotnet tool install --global coverlet.console
 
-      - name: Clean TestResults
-        run: |
-          Remove-Item -Path "TestResults" -Recurse -Force -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path "TestResults" -Force
-
-      - name: Run SonarQube analysis
+      - name: Запуск анализа SonarQube
         run: |
           dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.vscoveragexml.reportsPaths="**/coverage.cobertura.xml" `
-            /d:sonar.coverage.exclusions="**Tests.cs,**Test*.cs" `
-            /d:sonar.dotnet.excludeTestProjects=true
+            /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+            /d:sonar.coverage.exclusions="**Test*.cs"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
-
+          
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
@@ -55,12 +53,13 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\" `
-            /p:Exclude="[xunit.*]*,[*]*.Tests" `
-            /p:Include="[*]*" `
-            /p:Threshold=0
+            /p:CoverletOutput="TestResults\coverage\coverage.cobertura.xml"
 
-          Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Write-Host
-          Get-Content (Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml").FullName | Select-Object -First 20
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          if (-not $coverageFile) {
+              Write-Host "##[error] Файл с данными о покрытии не найден!"
+              exit 1
+          }
+          Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
