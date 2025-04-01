@@ -2,6 +2,7 @@
 using API;
 using AutoMapper;
 using BLL.DTO;
+using BLL.Exceptions;
 using BLL.Interfaces;
 using DAL.Entities;
 using DAL.Interfaces;
@@ -20,7 +21,7 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper) : IAuth
 
         return await authRepository.RegisterAsync(user, dto.Password, cancellationToken);
     }
-        
+
     public async Task<SignInResult> LogInAsync(LogInDto dto, CancellationToken cancellationToken = default)
     {
         if (dto.Email is null) throw new ArgumentNullException(nameof(dto.Email));
@@ -28,7 +29,7 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper) : IAuth
 
         var user = await authRepository.GetUserByEmailAsync(dto.Email, cancellationToken);
 
-        if (user is null) throw new AuthenticationException(Messages.UserIsNotLoggedIn);
+        if (user is null)  throw new UserNotFoundException(); 
         if (user.UserName is null) throw new InvalidOperationException();
 
         return await authRepository.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken);

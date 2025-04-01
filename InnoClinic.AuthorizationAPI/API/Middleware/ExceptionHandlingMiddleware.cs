@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using FluentValidation;
 using API.Controllers;
+using System.Security.Authentication;
+using BLL.Exceptions;
 
 namespace API.Middleware;
 
@@ -40,6 +42,9 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
 
         context.Response.StatusCode = exception switch
         {
+            ArgumentNullException => StatusCodes.Status400BadRequest,
+            InvalidOperationException => StatusCodes.Status400BadRequest,
+            UserNotFoundException => StatusCodes.Status401Unauthorized,
             _ => StatusCodes.Status500InternalServerError
         };
 

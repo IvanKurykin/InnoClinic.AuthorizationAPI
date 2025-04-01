@@ -2,5 +2,5 @@
 
 public class Messages
 {
-    public const string UserIsNotLoggedIn = "Invalid credentials";
+    public const string UserIsNotLoggedIn = "Your credentials are incorrect. Please try again";
 }

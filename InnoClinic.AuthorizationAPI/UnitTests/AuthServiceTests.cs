@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using AutoMapper;
+﻿using AutoMapper;
 using BLL.DTO;
 using BLL.Services;
 using DAL.Entities;
