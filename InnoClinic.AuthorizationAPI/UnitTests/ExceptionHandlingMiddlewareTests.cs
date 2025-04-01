@@ -1,6 +1,7 @@
 ﻿using API.Controllers;
 using API.Middleware;
 using BLL.Exceptions;
+using FluentAssertions;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -41,14 +42,21 @@ namespace UnitTests
             Assert.Contains("Invalid email", responseBody);
         }
 
-        [Fact]
-        public async Task InvokeAsyncReturns401()
+        [Theory]
+        [InlineData(typeof(ArgumentNullException), StatusCodes.Status400BadRequest)]
+        [InlineData(typeof(InvalidOperationException), StatusCodes.Status400BadRequest)]
+        [InlineData(typeof(UserNotFoundException), StatusCodes.Status401Unauthorized)]
+        [InlineData(typeof(Exception), StatusCodes.Status500InternalServerError)]
+        public async Task InvokeAsyncExceptionHandlingReturnsCorrectStatusCode(Type exceptionType, int expectedStatusCode)
         {
             var context = new DefaultHttpContext();
+            context.Response.Body = new MemoryStream();
 
-            await _middleware.InvokeAsync(context, _ => throw new UserNotFoundException());
+            var exception = (Exception)Activator.CreateInstance(exceptionType, "Test message")!;
 
-            Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+            await _middleware.InvokeAsync(context, _ => throw exception);
+
+            context.Response.StatusCode.Should().Be(expectedStatusCode);
         }
     }
 }

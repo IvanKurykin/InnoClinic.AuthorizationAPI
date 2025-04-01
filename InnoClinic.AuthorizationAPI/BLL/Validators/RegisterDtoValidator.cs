@@ -1,6 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using BLL.DTO;
-using BLL.Helpers.Constants;
+﻿using BLL.DTO;
+using BLL.Helpers;
 using FluentValidation;
 
 namespace BLL.Validators;
@@ -11,7 +10,7 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Please, enter the email")
-            .Must(BeValidEmail).WithMessage("Invalid email format");
+            .Must(ValidateEmail.BeValidEmail).WithMessage("Invalid email format");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Please, enter the password")
@@ -26,13 +25,5 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
         RuleFor(x => x.ReEnteredPassword)
             .NotEmpty().WithMessage("Please, reenter the password")
             .Must((model, field) => field == model.Password);
-    }
-    private static bool BeValidEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email)) return false;
-
-        return Regex.IsMatch(email,
-            ValidationPatterns.EmailRegex,
-            RegexOptions.IgnoreCase);
     }
 }
