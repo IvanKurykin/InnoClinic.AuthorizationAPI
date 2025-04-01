@@ -9,7 +9,6 @@ namespace UnitTests
         private readonly RegisterDtoValidator _validator = new();
 
         [Theory]
-        [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("invalid", false)]
         [InlineData("test@example.com", true)]

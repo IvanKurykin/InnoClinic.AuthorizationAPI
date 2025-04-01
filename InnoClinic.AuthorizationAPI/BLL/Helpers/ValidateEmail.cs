@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace BLL.Helpers;
 
-public class ValidateEmail
+public static class ValidateEmail
 {
     public static bool BeValidEmail(string? email)
     {
