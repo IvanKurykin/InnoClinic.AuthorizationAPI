@@ -57,7 +57,7 @@ public class AuthRepositoryTests
             Email = TestConstans.TestUserEmail,
             UserName = TestConstans.TestUserName
         };
-        var password = "Test@123";
+        var password = TestConstans.TestUserPassword;
         var cancellationToken = CancellationToken.None;
 
         _userManager.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
@@ -68,6 +68,7 @@ public class AuthRepositoryTests
         result.Should().NotBeNull();
         result.Succeeded.Should().BeTrue();
     }
+
     [Fact]
     public async Task LogInAsync()
     {
@@ -82,6 +83,36 @@ public class AuthRepositoryTests
 
         result.Should().NotBeNull();
         result.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LogInAsyncWhenInvalidCredentialsReturnsFailedResult()
+    {
+        const string userName = "invalid";
+        const string password = "invalid";
+        var rememberMe = false;
+        var cancellationToken = new CancellationToken();
+
+        _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false))
+            .ReturnsAsync(SignInResult.Failed);
+
+        var result = await _authRepository.LogInAsync(userName, password, rememberMe, cancellationToken);
+
+        result.Succeeded.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetUserByEmailAsyncWhenUserNotFoundReturnsNull()
+    {
+        const string email = "nonexistent@example.com";
+        var cancellationToken = new CancellationToken();
+
+        _userManager.Setup(x => x.FindByEmailAsync(email))
+            .ReturnsAsync((User?)null);
+
+        var result = await _authRepository.GetUserByEmailAsync(email, cancellationToken);
+
+        result.Should().BeNull();
     }
 
     [Fact]

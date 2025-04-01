@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BLL.DTO;
+using BLL.Exceptions;
 using BLL.Services;
 using DAL.Entities;
 using DAL.Interfaces;
@@ -77,5 +78,104 @@ public class AuthServiceTests
 
         result.Should().NotBeNull();
         result.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RegisterAsyncWhenPasswordIsNullThrowsArgumentNullException()
+    {
+        var dto = new RegisterDto
+        {
+            UserName = TestConstans.TestUserName,
+            Email = TestConstans.TestUserEmail,
+            Password = null!
+        };
+
+        var cancellationToken = new CancellationToken();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authService.RegisterAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task RegisterAsyncWhenUserNameIsNullThrowsArgumentNullException()
+    {
+        var dto = new RegisterDto
+        {
+            UserName = null!,
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword
+        };
+
+        var cancellationToken = new CancellationToken();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authService.RegisterAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogInAsyncWhenEmailIsNullThrowsArgumentNullException()
+    {
+        var dto = new LogInDto
+        {
+            Email = null!,
+            Password = TestConstans.TestUserPassword
+        };
+
+        var cancellationToken = new CancellationToken();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogInAsyncWhenPasswordIsNullThrowsArgumentNullException()
+    {
+        var dto = new LogInDto
+        {
+            Email = TestConstans.TestUserEmail,
+            Password = null!
+        };
+
+        var cancellationToken = new CancellationToken();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogInAsyncWhenUserNotFoundThrowsUserNotFoundException()
+    {
+        var dto = new LogInDto
+        {
+            Email = "nonexistent@example.com",
+            Password = TestConstans.TestUserPassword
+        };
+
+        var cancellationToken = new CancellationToken();
+
+        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        await Assert.ThrowsAsync<UserNotFoundException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogInAsyncWhenUserNameIsNullThrowsInvalidOperationException()
+    {
+        var dto = new LogInDto
+        {
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword
+        };
+
+        var user = new User { Email = dto.Email, UserName = null! };
+        var cancellationToken = new CancellationToken();
+
+        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
     }
 }
