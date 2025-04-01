@@ -38,10 +38,11 @@ jobs:
       - name: Запуск анализа SonarQube
         run: |
           dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+	    /d:sonar.scanAll=false `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
             /d:sonar.coverage.exclusions="**Test*.cs"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
@@ -49,6 +50,7 @@ jobs:
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
+            --verbosity normal `
             --collect:"XPlat Code Coverage" `
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
