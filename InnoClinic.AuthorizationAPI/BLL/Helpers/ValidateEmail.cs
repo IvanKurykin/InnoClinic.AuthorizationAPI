@@ -11,6 +11,7 @@ public class ValidateEmail
 
         return Regex.IsMatch(email,
             ValidationPatterns.EmailRegex,
-            RegexOptions.IgnoreCase);
+            RegexOptions.IgnoreCase,
+            TimeSpan.FromMilliseconds(250));
     }
 }
