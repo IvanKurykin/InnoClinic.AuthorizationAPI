@@ -1,0 +1,30 @@
+name: SonarQube Analysis
+
+on:
+  pull_request:
+    branches: [ '*' ]
+  push:
+    branches: [ 'main' ]
+
+jobs:
+  sonarqube:
+    runs-on: windows-latest  
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Run SonarQube analysis
+        run: |
+          dotnet sonarscanner begin /k:"InnoClinic_AuthorizationAPI" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
