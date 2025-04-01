@@ -8,23 +8,27 @@ on:
 
 jobs:
   sonarqube:
-    runs-on: windows-latest  
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0'
 
-      - name: Install SonarScanner for .NET
+      - name: Restore dependencies
+        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
+
+      - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
       - name: Run SonarQube analysis
         run: |
-          dotnet sonarscanner begin /k:"InnoClinic_AuthorizationAPI" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet sonarscanner begin /k:"InnoClinic_AuthorizationAPI" /o:"IvanKurykin" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
+          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --collect:"XPlat Code Coverage" --no-build --logger "trx;LogFileName=testresults.trx"
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
