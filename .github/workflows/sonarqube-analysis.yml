@@ -13,8 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
+          fetch-depth: 0  
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -26,11 +25,16 @@ jobs:
         with:
           dotnet-version: '8.0'
 
-      - name: Restore dependencies
-        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
-
       - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Install Coverlet
+        run: dotnet tool install --global coverlet.console
+
+      - name: Clean TestResults
+        run: |
+          Remove-Item -Path "TestResults" -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path "TestResults" -Force
 
       - name: Run SonarQube analysis
         run: |
@@ -38,11 +42,12 @@ jobs:
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
-            /d:sonar.coverage.exclusions="**Test*.cs"
+            /d:sonar.cs.vscoveragexml.reportsPaths="**/coverage.cobertura.xml" `
+            /d:sonar.coverage.exclusions="**Tests.cs,**Test*.cs" `
+            /d:sonar.dotnet.excludeTestProjects=true
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
-          
+
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
@@ -50,8 +55,12 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\"
+            /p:CoverletOutput="TestResults\" `
+            /p:Exclude="[xunit.*]*,[*]*.Tests" `
+            /p:Include="[*]*" `
+            /p:Threshold=0
 
           Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Write-Host
+          Get-Content (Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml").FullName | Select-Object -First 20
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
