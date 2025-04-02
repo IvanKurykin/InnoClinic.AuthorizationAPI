@@ -41,7 +41,7 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+            /d:sonar.cs.cobertura.reportsPaths="TestResults/coverage/coverage.cobertura.xml" `
             /d:sonar.coverage.exclusions="**Test*.cs"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
@@ -54,13 +54,15 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\coverage.cobertura.xml"
+            /p:CoverletOutput="TestResults/coverage/" `
+            /p:MergeWith="TestResults/coverage/coverage.cobertura.xml"
 
-          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
-          if (-not $coverageFile) {
-              Write-Host "##[error] Файл с данными о покрытии не найден!"
+          $coveragePath = "TestResults/coverage/coverage.cobertura.xml"
+          if (-not (Test-Path $coveragePath)) {
+              Write-Host "##[error] Файл с данными о покрытии не найден по пути: $coveragePath"
+              Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
               exit 1
           }
-          Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
+          Write-Host "Файл с покрытием найден: $coveragePath"
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
