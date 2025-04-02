@@ -36,31 +36,39 @@ jobs:
         run: dotnet tool install --global coverlet.console
 
       - name: Запуск анализа SonarQube
-        run: |
-          dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
-            /d:sonar.coverage.exclusions="**Test*.cs"
+  	run: |
 
-          dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
-          
-          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
-            --configuration Release `
-            --no-build `
-            --verbosity normal `
-            --collect:"XPlat Code Coverage" `
-            --logger "trx;LogFileName=testresults.trx" `
-            /p:CollectCoverage=true `
-            /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\coverage.cobertura.xml"
+    dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
+      /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+      /d:sonar.host.url="https://sonarcloud.io" `
+      /d:sonar.scanner.skipJreProvisioning=true `
+      /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+      /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**" `
+      /d:sonar.test.exclusions="**Test*.cs,**/UnitTests/**" `
+      /d:sonar.tests="UnitTests" `
+      /d:sonar.test.inclusions="**/*Tests.cs,**/UnitTests/**"
 
-          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
-          if (-not $coverageFile) {
-              Write-Host "##[error] Файл с данными о покрытии не найден!"
-              exit 1
-          }
-          Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
+    dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
 
-          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+    dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
+      --configuration Release `
+      --no-build `
+      --verbosity normal `
+      --collect:"XPlat Code Coverage" `
+      --logger "trx;LogFileName=testresults.trx" `
+      /p:CollectCoverage=true `
+      /p:CoverletOutputFormat=cobertura `
+      /p:CoverletOutput="TestResults\coverage\" `
+      /p:MergeWith="TestResults\coverage\coverage.cobertura.xml" `
+      /p:Include="[BLL]*,[DAL]*,[API]*" `
+      /p:Exclude="[UnitTests]*"
+
+    $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+    if (-not $coverageFile) {
+        Write-Host "##[error] Файл с данными о покрытии не найден!"
+        Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
+        exit 1
+    }
+    Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
+
+    dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
