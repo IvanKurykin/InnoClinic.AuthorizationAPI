@@ -44,15 +44,10 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
             /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
-            /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**" `
-            /d:sonar.test.exclusions="**Test*.cs,**/UnitTests/**" `
-            /d:sonar.tests="UnitTests"
+            /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
           
-          New-Item -ItemType Directory -Path "TestResults\coverage" -Force
-
-          # Запуск тестов с генерацией отчета о покрытии
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
@@ -61,10 +56,7 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\" `
-            /p:MergeWith="TestResults\coverage\coverage.cobertura.xml" `
-            /p:Include="[InnoClinic.AuthorizationAPI.BLL]*,[InnoClinic.AuthorizationAPI.DAL]*,[InnoClinic.AuthorizationAPI.API]*" `
-            /p:Exclude="[InnoClinic.AuthorizationAPI.UnitTests]*"
+            /p:CoverletOutput="TestResults\coverage\"
 
           $coverageFile = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
           if (-not $coverageFile) {
@@ -73,6 +65,5 @@ jobs:
               exit 1
           }
           Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
-          Get-Content $coverageFile.FullName | Select-Object -First 20
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
