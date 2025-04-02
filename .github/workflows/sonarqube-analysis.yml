@@ -1,4 +1,4 @@
-name: SonarQube Analysis
+name: Анализ SonarQube
 
 on:
   pull_request:
@@ -32,11 +32,6 @@ jobs:
       - name: Установка SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: Установка Coverlet
-        run: |
-          dotnet tool install --global coverlet.console
-          dotnet add InnoClinic.AuthorizationAPI/UnitTests/UnitTests.csproj package coverlet.msbuild --version 3.2.0
-
       - name: Запуск анализа SonarQube
         run: |
           dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
@@ -61,7 +56,7 @@ jobs:
             /p:CoverletOutput="TestResults/coverage/coverage.cobertura.xml" `
             /p:MergeWith="TestResults/coverage/coverage.cobertura.xml"
 
-          $coverageFile = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          $coverageFile = Get-ChildItem -Path "InnoClinic.AuthorizationAPI/UnitTests" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
           if ($coverageFile) {
               Copy-Item -Path $coverageFile.FullName -Destination "TestResults/coverage/coverage.cobertura.xml" -Force
               Write-Host "Файл покрытия скопирован в TestResults/coverage/coverage.cobertura.xml"
@@ -69,7 +64,7 @@ jobs:
 
           if (-not (Test-Path "TestResults/coverage/coverage.cobertura.xml")) {
               Write-Host "##[error] Файл с данными о покрытии не найден!"
-              Get-ChildItem -Path "TestResults" -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
+              Get-ChildItem -Path "InnoClinic.AuthorizationAPI/UnitTests" -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
               exit 1
           }
           Write-Host "Файл с покрытием найден: TestResults/coverage/coverage.cobertura.xml"
