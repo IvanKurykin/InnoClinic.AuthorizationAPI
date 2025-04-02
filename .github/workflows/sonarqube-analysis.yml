@@ -32,12 +32,13 @@ jobs:
       - name: Установка SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: Установка Coverlet (для сбора покрытия)
-        run: dotnet tool install --global coverlet.console
+      - name: Установка Coverlet
+        run: |
+          dotnet tool install --global coverlet.console
+          dotnet add InnoClinic.AuthorizationAPI/UnitTests/UnitTests.csproj package coverlet.msbuild --version 3.2.0
 
       - name: Запуск анализа SonarQube
         run: |
-          # Начинаем анализ SonarQube
           dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
@@ -45,11 +46,13 @@ jobs:
             /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
             /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**" `
             /d:sonar.test.exclusions="**Test*.cs,**/UnitTests/**" `
-            /d:sonar.tests="UnitTests" `
-            /d:sonar.test.inclusions="**/*Tests.cs,**/UnitTests/**"
+            /d:sonar.tests="UnitTests"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
           
+          New-Item -ItemType Directory -Path "TestResults\coverage" -Force
+
+          # Запуск тестов с генерацией отчета о покрытии
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
@@ -60,15 +63,16 @@ jobs:
             /p:CoverletOutputFormat=cobertura `
             /p:CoverletOutput="TestResults\coverage\" `
             /p:MergeWith="TestResults\coverage\coverage.cobertura.xml" `
-            /p:Include="[BLL]*,[DAL]*,[API]*" `
-            /p:Exclude="[UnitTests]*"
+            /p:Include="[InnoClinic.AuthorizationAPI.BLL]*,[InnoClinic.AuthorizationAPI.DAL]*,[InnoClinic.AuthorizationAPI.API]*" `
+            /p:Exclude="[InnoClinic.AuthorizationAPI.UnitTests]*"
 
-          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          $coverageFile = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
           if (-not $coverageFile) {
               Write-Host "##[error] Файл с данными о покрытии не найден!"
               Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
               exit 1
           }
           Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
+          Get-Content $coverageFile.FullName | Select-Object -First 20
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
