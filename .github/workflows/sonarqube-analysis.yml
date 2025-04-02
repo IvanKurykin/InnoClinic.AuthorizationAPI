@@ -43,11 +43,13 @@ jobs:
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+            /d:sonar.cs.cobertura.reportsPaths="TestResults/coverage/coverage.cobertura.xml" `
             /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
           
+          New-Item -ItemType Directory -Path "TestResults/coverage" -Force
+
           dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
             --configuration Release `
             --no-build `
@@ -56,14 +58,19 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\"
+            /p:CoverletOutput="TestResults/coverage/coverage.cobertura.xml"
 
           $coverageFile = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
-          if (-not $coverageFile) {
+          if ($coverageFile) {
+              Copy-Item -Path $coverageFile.FullName -Destination "TestResults/coverage/coverage.cobertura.xml" -Force
+              Write-Host "Файл покрытия скопирован в TestResults/coverage/coverage.cobertura.xml"
+          }
+
+          if (-not (Test-Path "TestResults/coverage/coverage.cobertura.xml")) {
               Write-Host "##[error] Файл с данными о покрытии не найден!"
-              Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
+              Get-ChildItem -Path "TestResults" -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Найден XML файл: $($_.FullName)" }
               exit 1
           }
-          Write-Host "Файл с покрытием найден: $($coverageFile.FullName)"
+          Write-Host "Файл с покрытием найден: TestResults/coverage/coverage.cobertura.xml"
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
