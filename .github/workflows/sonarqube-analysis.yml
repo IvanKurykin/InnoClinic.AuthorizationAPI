@@ -58,7 +58,8 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults/coverage/coverage.cobertura.xml"
+            /p:CoverletOutput="TestResults/coverage/coverage.cobertura.xml" `
+            /p:MergeWith="TestResults/coverage/coverage.cobertura.xml"
 
           $coverageFile = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
           if ($coverageFile) {
