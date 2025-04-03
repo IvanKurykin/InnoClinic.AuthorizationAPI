@@ -33,7 +33,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.scanner.skipJreProvisioning=true \
-            /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/coverage.cobertura.xml" \
+            /d:sonar.cs.vscoveragexml.reportsPaths="**/UnitTests/TestResults/**/coverage.cobertura.xml" \
             /d:sonar.branch.name="main"
 
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
@@ -45,8 +45,9 @@ jobs:
             --logger "trx;LogFileName=testresults.trx" \
             /p:CollectCoverage=true \
             /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=TestResults/coverage.cobertura.xml
+            /p:CoverletOutput=InnoClinic.AuthorizationAPI/UnitTests/TestResults/coverage.cobertura.xml
 
-          ls -R TestResults
+          echo "Successfull testing. Cheking field TestResults:"
+          ls -R InnoClinic.AuthorizationAPI/UnitTests/TestResults
 
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
