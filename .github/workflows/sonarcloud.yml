@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +15,7 @@ jobs:
 
     - name: Find project directory
       run: |
-      echo "PROJECT_DIR=$(find . -name '*.sln' -exec dirname {} \; | head -n 1)" >> $GITHUB_ENV
+        echo "PROJECT_DIR=$(find . -name '*.sln' -exec dirname {} \; | head -n 1)" >> $GITHUB_ENV
       
     - name: Navigate to project
       run: cd ${{ env.PROJECT_DIR }}
@@ -37,7 +36,7 @@ jobs:
       run: dotnet test --no-build --verbosity normal --configuration Release
 
   analyze:
-
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -53,8 +52,8 @@ jobs:
         sonarOrganization: ${{ secrets.SONAR_ORGANIZATION }}
         dotnetBuildArguments: --configuration Release
         dotnetTestArguments: --no-build --configuration Release --verbosity normal --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.coverage.exclusions="${{env.EXCLUDE_FROM_COVERAGE}}" /d:sonar.exclusions="${{env.EXCLUDE_FROM_SONAR}}" 
-    env: 
-        EXCLUDE_FROM_COVERAGE: "**/Program.cs, **/Extensions/*, **/Exceptions/**, **/Migrations/*, **/Entities/*, **/Enums/**/*, **/MappingConfigurations/*, **/ViewModels/**, **/Utilities/**"
+        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.coverage.exclusions="${{env.EXCLUDE_FROM_COVERAGE}}" /d:sonar.exclusions="${{env.EXCLUDE_FROM_SONAR}}"
+      env: 
+        EXCLUDE_FROM_COVERAGE: "**/Program.cs,**/Extensions/*,**/Exceptions/**,**/Migrations/*,**/Entities/*,**/Enums/**/*,**/MappingConfigurations/*,**/ViewModels/**,**/Utilities/**"
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        EXCLUDE_FROM_SONAR: "**/Migrations/*, **/Dockerfile"
+        EXCLUDE_FROM_SONAR: "**/Migrations/*,**/Dockerfile"
