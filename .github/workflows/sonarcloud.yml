@@ -28,7 +28,7 @@ jobs:
       - name: Run SonarQube analysis
         run: |
           dotnet sonarscanner begin \
-            /k:"InnoClinic.AuthorizationAPI" \
+            /k:"IvanKurykin_InnoClinic.AuthorizationAPI" \
             /o:"ivankurykin" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
