@@ -1,5 +1,4 @@
-﻿using DAL.Constants;
-using DAL.Context;
+﻿using DAL.Context;
 using DAL.Entities;
 using DAL.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -8,10 +7,10 @@ namespace DAL.Repositories;
 
 public class AuthRepository(UserManager<User> userManager, ApplicationDbContext dbContext, SignInManager<User> signInManager) : IAuthRepository
 {
-    public async Task<IdentityResult> RegisterAsync(User user, string password, CancellationToken cancellationToken = default)
+    public async Task<IdentityResult> RegisterAsync(User user, string password, string role, CancellationToken cancellationToken = default)
     {
         await userManager.CreateAsync(user, password);
-        await userManager.AddToRoleAsync(user, Roles.Doctor);
+        await userManager.AddToRoleAsync(user, role);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return IdentityResult.Success;

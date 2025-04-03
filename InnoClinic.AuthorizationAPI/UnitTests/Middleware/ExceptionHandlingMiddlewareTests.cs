@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace UnitTests
+namespace UnitTests.Middleware
 {
     public class ExceptionHandlingMiddlewareTests
     {

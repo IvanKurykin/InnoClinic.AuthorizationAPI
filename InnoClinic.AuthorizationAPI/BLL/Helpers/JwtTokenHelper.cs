@@ -17,13 +17,13 @@ public class JwtTokenHelper : IJwtTokenHelper
         _jwtSettings = jwtSettings.Value;
     }
 
-    public string GenerateJwtToken(User user, IList<string> roles)
+    public string GenerateJwtToken(string email, string role)
     {
         ValidateSecretKey(_jwtSettings.SecretKey);
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
-        var tokenDescriptor = CreateTokenDescriptor(user, key, roles);
+        var tokenDescriptor = CreateTokenDescriptor(email, key, role);
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
@@ -36,28 +36,24 @@ public class JwtTokenHelper : IJwtTokenHelper
             throw new InvalidOperationException();
     }
 
-    public IEnumerable<Claim> CreateClaims(User user, IList<string> roles)
+    public IEnumerable<Claim> CreateClaims(string email, string role)
     {
         var claims = new List<Claim>
         { 
-            new Claim(JwtRegisteredClaimNames.Sub, user.Email),  
+            new Claim(JwtRegisteredClaimNames.Sub, email),  
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),  
-            new Claim(JwtRegisteredClaimNames.Email, user.Email)
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(ClaimTypes.Role, role)
         };
-
-        foreach(var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
 
         return claims;
     }
 
-    public SecurityTokenDescriptor CreateTokenDescriptor(User user, byte[] key, IList<string> roles)
+    public SecurityTokenDescriptor CreateTokenDescriptor(string email, byte[] key, string role)
     {
         return new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(CreateClaims(user, roles)),
+            Subject = new ClaimsIdentity(CreateClaims(email, role)),
             Expires = DateTime.UtcNow.AddHours(_jwtSettings.ExpiryInHours),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
             Issuer = _jwtSettings.Issuer,

@@ -1,11 +1,11 @@
-﻿using API.Controllers;
+﻿using API;
+using API.Controllers;
 using BLL.DTO;
 using BLL.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace UnitTests;
 
@@ -21,7 +21,7 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task RegisterAsync()
+    public async Task RegisterAsyncShouldReturnOkWhenRegistrationSucceeds()
     {
         var dto = new RegisterDto
         {
@@ -32,8 +32,7 @@ public class AuthControllerTests
         var cancellationToken = new CancellationToken();
 
         var successResult = IdentityResult.Success;
-        _authServiceMock.Setup(x => x.RegisterAsync(dto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(successResult);
+        _authServiceMock.Setup(x => x.RegisterAsync(dto, cancellationToken)).ReturnsAsync(successResult);
 
         var result = await _authController.RegisterAsync(dto, cancellationToken);
 
@@ -43,24 +42,14 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task LogInAsync()
+    public async Task LogOutAsAWorkerAsyncShouldReturnOkWhenAuthorized()
     {
-        /*var dto = new LogInDto
-        {
-            Email = TestConstans.TestUserEmail,
-            Password = TestConstans.TestUserPassword,
-            RememberMe = false
-        };
         var cancellationToken = new CancellationToken();
 
-        var successResult = SignInResult.Success;
-        _authServiceMock.Setup(x => x.LogInAsync(dto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(successResult);
-
-        var result = await _authController.LogInAsynс(dto, cancellationToken);
+        var result = await _authController.LogOutAsAWorkerAsync(cancellationToken);
 
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
-        okResult!.Value.Should().Be(successResult);*/
+        okResult!.Value.Should().Be(Messages.UserLoggedOutSuccessfully);
     }
 }

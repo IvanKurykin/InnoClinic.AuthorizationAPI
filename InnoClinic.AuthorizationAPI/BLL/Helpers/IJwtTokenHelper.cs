@@ -1,8 +1,6 @@
-﻿using DAL.Entities;
-
-namespace BLL.Helpers;
+﻿namespace BLL.Helpers;
 
 public interface IJwtTokenHelper
 {
-    string GenerateJwtToken(User user, IList<string> roles);
+    string GenerateJwtToken(string email, string role);
 }

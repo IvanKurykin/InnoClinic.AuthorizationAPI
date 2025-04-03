@@ -1,10 +1,8 @@
-﻿using System.Diagnostics;
-using AutoMapper;
+﻿using AutoMapper;
 using BLL.DTO;
 using BLL.Exceptions;
 using BLL.Helpers;
 using BLL.Interfaces;
-using DAL.Constants;
 using DAL.Entities;
 using DAL.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -18,16 +16,18 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper, IJwtTok
     {
         if (dto.Password is null) throw new ArgumentNullException(nameof(dto.Password));
         if (dto.UserName is null) throw new ArgumentNullException(nameof(dto.UserName));
-        
+        if (dto.Role is null) throw new ArgumentNullException(nameof(dto.Role));
+
         var user = mapper.Map<User>(dto);
 
-        return await authRepository.RegisterAsync(user, dto.Password, cancellationToken);
+        return await authRepository.RegisterAsync(user, dto.Password, dto.Role, cancellationToken);
     }
 
     public async Task<string> LogInAsync(LogInDto dto, CancellationToken cancellationToken = default)
     {
         if (dto.Email is null) throw new ArgumentNullException(nameof(dto.Email));
         if (dto.Password is null) throw new ArgumentNullException(nameof(dto.Password));
+        if (dto.Role is null) throw new ArgumentNullException(nameof(dto.Role));
 
         var user = await authRepository.GetUserByEmailAsync(dto.Email, cancellationToken);
 
@@ -36,35 +36,14 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper, IJwtTok
 
         var roles = await authRepository.GetUserRolesAsync(user, cancellationToken);
 
-        if (roles.Contains(Roles.Admin) || roles.Contains(Roles.Doctor)) throw new ForbiddenAccessException();
+        if (dto.Role != roles.Single()) throw new ForbiddenAccessException();
 
         var signInResult = await authRepository.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken);
 
         if (!signInResult.Succeeded) throw new UserIsNotLoggedIn();
         
-        return jwtTokenHelper.GenerateJwtToken(user, roles);
+        return jwtTokenHelper.GenerateJwtToken(dto.Email, dto.Role);
     } 
-
-    public async Task<string> LogInAsAWorkerAsync(LogInDto dto, CancellationToken cancellationToken = default)
-    {
-        if (dto.Email is null) throw new ArgumentNullException(nameof(dto.Email));
-        if (dto.Password is null) throw new ArgumentNullException(nameof(dto.Password));
-
-        var user = await authRepository.GetUserByEmailAsync(dto.Email, cancellationToken);
-
-        if (user is null) throw new UserNotFoundException();
-        if (user.UserName is null) throw new InvalidOperationException();
-
-        var roles = await authRepository.GetUserRolesAsync(user, cancellationToken);
-
-        if (roles.Contains(Roles.Patient)) throw new ForbiddenAccessException();
-
-        var signInResult = await authRepository.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken);
-
-        if (!signInResult.Succeeded) throw new UserIsNotLoggedIn();
-
-        return jwtTokenHelper.GenerateJwtToken(user, roles);
-    }
 
     public async Task LogOutAsync(CancellationToken cancellationToken)
     {
