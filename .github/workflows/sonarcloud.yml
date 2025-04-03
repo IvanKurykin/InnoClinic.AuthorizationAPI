@@ -13,32 +13,37 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Find project directory
+    - name: Find solution file
+      id: find-sln
       run: |
-        echo "PROJECT_DIR=$(find . -name '*.sln' -exec dirname {} \; | head -n 1)" >> $GITHUB_ENV
-      
-    - name: Navigate to project
-      run: cd ${{ env.PROJECT_DIR }}
-      shell: bash
+        sln_path=$(find . -name '*.sln' -print -quit)
+        if [ -z "$sln_path" ]; then
+          echo "::error::No .sln file found in repository"
+          exit 1
+        fi
+        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
+        echo "project_dir=$(dirname "$sln_path")" >> $GITHUB_OUTPUT
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0
+        dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      run: dotnet restore
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
+      run: dotnet restore ${{ steps.find-sln.outputs.sln_path }}
 
     - name: Build
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
       run: dotnet build --no-restore --configuration Release
 
     - name: Test
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
       run: dotnet test --no-build --verbosity normal --configuration Release
 
   analyze:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
       with:
