@@ -1,73 +1,80 @@
-name: .NET CI Pipeline
+name: SonarQube Analysis
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ '*' ]
+  push:
+    branches: [ 'main' ]
 
 jobs:
-  build_and_test:
-    runs-on: ubuntu-latest
+  sonarqube:
+    runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Discover solution file
-      id: solution
-      run: |
-        echo "::group::Repository structure"
-        ls -R
-        echo "::endgroup::"
-        
-        sln_path=$(find . -name "*.sln" -print -quit)
-        
-        if [ -z "$sln_path" ]; then
-          echo "::error::No .sln file found in the repository!"
-          exit 1
-        fi
-        
-        echo "Found solution file at: $sln_path"
-        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
-        echo "project_dir=$(dirname "$sln_path")" >> $GITHUB_OUTPUT
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
 
-    - name: Restore dependencies
-      working-directory: ${{ steps.solution.outputs.project_dir }}
-      run: dotnet restore ${{ steps.solution.outputs.sln_path }}
+      - name: Install tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet tool install --global coverlet.console
 
-    - name: Build solution
-      working-directory: ${{ steps.solution.outputs.project_dir }}
-      run: dotnet build --no-restore --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
 
-    - name: Run tests
-      working-directory: ${{ steps.solution.outputs.project_dir }}
-      run: dotnet test --no-build --verbosity normal --configuration Release
+      - name: Run SonarQube analysis
+        run: |
+          dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.scanner.skipJreProvisioning=true `
+            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
+            /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**" `
+            /d:sonar.test.exclusions="**Test*.cs,**/UnitTests/**" `
+            /d:sonar.tests="UnitTests" `
+            /d:sonar.test.inclusions="**/*Tests.cs,**/UnitTests/**"
 
-  sonarcloud_analysis:
-    needs: build_and_test
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+          dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
 
-    - name: SonarCloud Scan
-      uses: sonarsource/sonarcloud-github-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        projectBaseDir: ${{ needs.build_and_test.outputs.project_dir }}
-        args: |
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-          -Dsonar.projectName=${{ secrets.SONAR_PROJECT_NAME }}
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-          -Dsonar.sources=.
-          -Dsonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
-          -Dsonar.cs.vstest.reportsPaths="**/*.trx"
-          -Dsonar.coverage.exclusions="**/Program.cs,**/Migrations/**"
-          -Dsonar.exclusions="**/wwwroot/**"
+          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --collect:"XPlat Code Coverage" `
+            --logger "trx;LogFileName=testresults.trx" `
+            /p:CollectCoverage=true `
+            /p:CoverletOutputFormat=cobertura `
+            /p:CoverletOutput="TestResults\coverage\" `
+            /p:MergeWith="TestResults\coverage\coverage.cobertura.xml" `
+            /p:Include="[BLL]*,[DAL]*,[API]*" `
+            /p:Exclude="[UnitTests]*"
+
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          if (-not $coverageFile) {
+              Write-Host "##[error] Coverage file not found!"
+              Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Found XML file: $($_.FullName)" }
+              exit 1
+          }
+          Write-Host "Coverage file found: $($coverageFile.FullName)"
+
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+            **/TestResults/coverage/coverage.cobertura.xml
