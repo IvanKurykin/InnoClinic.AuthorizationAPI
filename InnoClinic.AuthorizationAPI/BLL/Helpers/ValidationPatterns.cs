@@ -1,4 +1,4 @@
-﻿namespace BLL.Helpers.Constants;
+﻿namespace BLL.Helpers;
 
 public static class ValidationPatterns
 {

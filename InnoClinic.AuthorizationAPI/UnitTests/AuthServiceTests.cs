@@ -30,27 +30,46 @@ public class AuthServiceTests
         _authService = new AuthService(_authRepositoryMock.Object, _mapperMock.Object, _jwtTokenHelperMock.Object, _httpContextAccessorMock.Object);
     }
 
-    [Fact]
-    public async Task RegisterAsyncShouldReturnSuccessWhenValidData()
+    public static IEnumerable<object[]> ValidRegisterData =>
+        new List<object[]>
+        {
+            new object[] { TestConstans.TestUserName, TestConstans.TestUserEmail, TestConstans.TestUserPassword, Roles.Admin },
+            new object[] { "anotherUser", "another@email.com", "P@ssw0rd123", Roles.Patient }
+        };
+
+    public static IEnumerable<object[]> NullRegisterFields =>
+        new List<object[]>
+        {
+            new object[] { nameof(RegisterDto.UserName) },
+            new object[] { nameof(RegisterDto.Password) },
+            new object[] { nameof(RegisterDto.Role) }
+        };
+
+    public static IEnumerable<object[]> NullLoginFields =>
+        new List<object[]>
+        {
+            new object[] { nameof(LogInDto.Email) },
+            new object[] { nameof(LogInDto.Password) },
+            new object[] { nameof(LogInDto.Role) }
+        };
+
+    [Theory]
+    [MemberData(nameof(ValidRegisterData))]
+    public async Task RegisterAsyncShouldReturnSuccessWhenValidData(string userName, string email, string password, string role)
     {
         var dto = new RegisterDto
         {
-            UserName = TestConstans.TestUserName,
-            Email = TestConstans.TestUserEmail,
-            Password = TestConstans.TestUserPassword,
-            Role = Roles.Admin
+            UserName = userName,
+            Email = email,
+            Password = password,
+            Role = role
         };
 
-        var user = new User
-        {
-            UserName = dto.UserName,
-            Email = dto.Email
-        };
-
+        var user = new User { UserName = userName, Email = email };
         var cancellationToken = new CancellationToken();
 
         _mapperMock.Setup(x => x.Map<User>(dto)).Returns(user);
-        _authRepositoryMock.Setup(x => x.RegisterAsync(user, dto.Password, dto.Role, cancellationToken)).ReturnsAsync(IdentityResult.Success);
+        _authRepositoryMock.Setup(x => x.RegisterAsync(user, password, role, cancellationToken)).ReturnsAsync(IdentityResult.Success);
 
         var result = await _authService.RegisterAsync(dto, cancellationToken);
 
@@ -58,40 +77,8 @@ public class AuthServiceTests
         result.Succeeded.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task LogInAsyncShouldReturnTokenWhenValidCredentials()
-    {
-        var dto = new LogInDto
-        {
-            Email = TestConstans.TestUserEmail,
-            Password = TestConstans.TestUserPassword,
-            RememberMe = false,
-            Role = Roles.Admin
-        };
-
-        var user = new User
-        {
-            UserName = TestConstans.TestUserName,
-            Email = dto.Email
-        };
-
-        var expectedToken = "generated.jwt.token";
-        var cancellationToken = new CancellationToken();
-
-        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, cancellationToken)).ReturnsAsync(user);
-        _authRepositoryMock.Setup(x => x.GetUserRolesAsync(user, cancellationToken)).ReturnsAsync(new List<string> { Roles.Admin });
-        _authRepositoryMock.Setup(x => x.LogInAsync(user.UserName!, dto.Password, dto.RememberMe, cancellationToken)).ReturnsAsync(SignInResult.Success);
-        _jwtTokenHelperMock.Setup(x => x.GenerateJwtToken(dto.Email, dto.Role)).Returns(expectedToken);
-
-        var result = await _authService.LogInAsync(dto, cancellationToken);
-
-        result.Should().Be(expectedToken);
-    }
-
     [Theory]
-    [InlineData(nameof(RegisterDto.Password))]
-    [InlineData(nameof(RegisterDto.UserName))]
-    [InlineData(nameof(RegisterDto.Role))]
+    [MemberData(nameof(NullRegisterFields))]
     public async Task RegisterAsyncShouldThrowArgumentNullExceptionWhenRequiredFieldIsNull(string propertyName)
     {
         var dto = new RegisterDto
@@ -107,10 +94,33 @@ public class AuthServiceTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => _authService.RegisterAsync(dto, cancellationToken));
     }
 
+    [Fact]
+    public async Task LogInAsyncShouldReturnTokenWhenValidCredentials()
+    {
+        var dto = new LogInDto
+        {
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword,
+            RememberMe = false,
+            Role = Roles.Admin
+        };
+
+        var user = new User { UserName = TestConstans.TestUserName, Email = dto.Email };
+        var expectedToken = "generated.jwt.token";
+        var cancellationToken = new CancellationToken();
+
+        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, cancellationToken)).ReturnsAsync(user);
+        _authRepositoryMock.Setup(x => x.GetUserRolesAsync(user, cancellationToken)).ReturnsAsync(new List<string> { Roles.Admin });
+        _authRepositoryMock.Setup(x => x.LogInAsync(user.UserName!, dto.Password, dto.RememberMe, cancellationToken)).ReturnsAsync(SignInResult.Success);
+        _jwtTokenHelperMock.Setup(x => x.GenerateJwtToken(dto.Email, dto.Role)).Returns(expectedToken);
+
+        var result = await _authService.LogInAsync(dto, cancellationToken);
+
+        result.Should().Be(expectedToken);
+    }
+
     [Theory]
-    [InlineData(nameof(LogInDto.Email))]
-    [InlineData(nameof(LogInDto.Password))]
-    [InlineData(nameof(LogInDto.Role))]
+    [MemberData(nameof(NullLoginFields))]
     public async Task LogInAsyncShouldThrowArgumentNullExceptionWhenRequiredFieldIsNull(string propertyName)
     {
         var dto = new LogInDto

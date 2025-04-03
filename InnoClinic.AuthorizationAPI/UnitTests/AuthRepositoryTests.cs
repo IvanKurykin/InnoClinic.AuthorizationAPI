@@ -51,84 +51,55 @@ public class AuthRepositoryTests
         _authRepository = new AuthRepository(_userManager.Object, _dbContext, _signInManager.Object);
     }
 
+    public static IEnumerable<object[]> LoginTestCases()
+    {
+        yield return new object[] { TestConstans.TestUserName, TestConstans.TestUserPassword, false, SignInResult.Success, true };
+        yield return new object[] { "invalid", "invalid", false, SignInResult.Failed, false };
+        yield return new object[] { "locked", "user", true, SignInResult.LockedOut, false };
+    }
+    public static IEnumerable<object[]> UserEmailTestCases()
+    {
+        yield return new object[] { "nonexistent@example.com", null };
+        yield return new object[] { "existing@example.com", new User { Email = "existing@example.com", UserName = TestConstans.TestUserName } };
+    }
+
     [Fact]
     public async Task RegisterAsyncShouldRegisterUserWithRole()
     {
-        var user = new User
-        {
-            Email = TestConstans.TestUserEmail,
-            UserName = TestConstans.TestUserName
-        };
+        var user = new User { Email = TestConstans.TestUserEmail, UserName = TestConstans.TestUserName };
         var password = TestConstans.TestUserPassword;
         var role = Roles.Patient;
-        var cancellationToken = CancellationToken.None;
 
         _userManager.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
         _userManager.Setup(x => x.AddToRoleAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
 
-        var result = await _authRepository.RegisterAsync(user, password, role, cancellationToken);
+        var result = await _authRepository.RegisterAsync(user, password, role, CancellationToken.None);
 
         result.Should().NotBeNull();
         result.Succeeded.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task LogInAsyncShouldReturnSuccessForValidCredentials()
+    [Theory]
+    [MemberData(nameof(LoginTestCases))]
+    public async Task LogInAsyncShouldReturnExpectedResult(string userName, string password, bool rememberMe, SignInResult expectedResult, bool expectedSuccess)
     {
-        var userName = TestConstans.TestUserName;
-        var password = TestConstans.TestUserPassword;
-        var rememberMe = false;
-        var cancellationToken = new CancellationToken();
+        _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(expectedResult);
 
-        _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(SignInResult.Success);
-
-        var result = await _authRepository.LogInAsync(userName, password, rememberMe, cancellationToken);
+        var result = await _authRepository.LogInAsync(userName, password, rememberMe, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Succeeded.Should().BeTrue();
+        result.Succeeded.Should().Be(expectedSuccess);
     }
 
-    [Fact]
-    public async Task LogInAsyncShouldReturnFailedForInvalidCredentials()
+    [Theory]
+    [MemberData(nameof(UserEmailTestCases))]
+    public async Task GetUserByEmailAsyncShouldReturnExpectedUser(string email, User expectedUser)
     {
-        const string userName = "invalid";
-        const string password = "invalid";
-        var rememberMe = false;
-        var cancellationToken = new CancellationToken();
-
-        _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(SignInResult.Failed);
-
-        var result = await _authRepository.LogInAsync(userName, password, rememberMe, cancellationToken);
-
-        result.Succeeded.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task GetUserByEmailAsyncShouldReturnNullWhenUserNotFound()
-    {
-        const string email = "nonexistent@example.com";
-        var cancellationToken = new CancellationToken();
-
-        _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync((User?)null);
-
-        var result = await _authRepository.GetUserByEmailAsync(email, cancellationToken);
-
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetUserByEmailAsyncShouldReturnUserWhenUserExists()
-    {
-        const string email = "existing@example.com";
-        var expectedUser = new User { Email = email, UserName = TestConstans.TestUserName };
-        var cancellationToken = new CancellationToken();
-
         _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(expectedUser);
 
-        var result = await _authRepository.GetUserByEmailAsync(email, cancellationToken);
+        var result = await _authRepository.GetUserByEmailAsync(email, CancellationToken.None);
 
-        result.Should().NotBeNull();
-        result.Email.Should().Be(email);
+        result.Should().Be(expectedUser);
     }
 
     [Fact]
@@ -136,26 +107,18 @@ public class AuthRepositoryTests
     {
         var user = new User { Email = TestConstans.TestUserEmail, UserName = TestConstans.TestUserName };
         var expectedRoles = new List<string> { Roles.Patient };
-        var cancellationToken = new CancellationToken();
 
         _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(expectedRoles);
 
-        var result = await _authRepository.GetUserRolesAsync(user, cancellationToken);
+        var result = await _authRepository.GetUserRolesAsync(user, CancellationToken.None);
 
-        result.Should().NotBeNull();
         result.Should().BeEquivalentTo(expectedRoles);
     }
 
     [Fact]
     public async Task LogOutAsyncShouldCallSignOut()
     {
-        var cancellationToken = new CancellationToken();
-
-        _signInManager.Setup(x => x.SignOutAsync())
-            .Returns(Task.CompletedTask);
-
-        await _authRepository.LogOutAsync(cancellationToken);
-
+        await _authRepository.LogOutAsync(CancellationToken.None);
         _signInManager.Verify(x => x.SignOutAsync(), Times.Once);
     }
 }

@@ -25,5 +25,8 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
         RuleFor(x => x.ReEnteredPassword)
             .NotEmpty().WithMessage("Please, reenter the password")
             .Must((model, field) => field == model.Password);
+
+        RuleFor(x => x.Role)
+            .NotEmpty().WithMessage("Please, choose the role");
     }
 }

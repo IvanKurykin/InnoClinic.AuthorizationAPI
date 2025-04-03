@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using System.Text;
 using BLL.Helpers.Settings;
-using DAL.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 

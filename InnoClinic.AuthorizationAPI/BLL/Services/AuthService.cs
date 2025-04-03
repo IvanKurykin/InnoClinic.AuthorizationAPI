@@ -14,22 +14,18 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper, IJwtTok
 {
     public async Task<IdentityResult> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
     {
-        if (dto.Password is null) throw new ArgumentNullException(nameof(dto.Password));
-        if (dto.UserName is null) throw new ArgumentNullException(nameof(dto.UserName));
-        if (dto.Role is null) throw new ArgumentNullException(nameof(dto.Role));
+        ValidationHelper.ThrowIfNull((dto.Password, nameof(dto.Password)), (dto.UserName, nameof(dto.UserName)), (dto.Role, nameof(dto.Role)));
 
         var user = mapper.Map<User>(dto);
 
-        return await authRepository.RegisterAsync(user, dto.Password, dto.Role, cancellationToken);
+        return await authRepository.RegisterAsync(user, dto.Password ?? string.Empty, dto.Role ?? string.Empty, cancellationToken);
     }
 
     public async Task<string> LogInAsync(LogInDto dto, CancellationToken cancellationToken = default)
     {
-        if (dto.Email is null) throw new ArgumentNullException(nameof(dto.Email));
-        if (dto.Password is null) throw new ArgumentNullException(nameof(dto.Password));
-        if (dto.Role is null) throw new ArgumentNullException(nameof(dto.Role));
+        ValidationHelper.ThrowIfNull((dto.Email, nameof(dto.Email)), (dto.Password, nameof(dto.Password)), (dto.Role, nameof(dto.Role)));
 
-        var user = await authRepository.GetUserByEmailAsync(dto.Email, cancellationToken);
+        var user = await authRepository.GetUserByEmailAsync(dto.Email ?? string.Empty, cancellationToken);
 
         if (user is null)  throw new UserNotFoundException();
         if (user.UserName is null) throw new InvalidOperationException();
@@ -38,11 +34,11 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper, IJwtTok
 
         if (dto.Role != roles.Single()) throw new ForbiddenAccessException();
 
-        var signInResult = await authRepository.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken);
+        var signInResult = await authRepository.LogInAsync(user.UserName, dto.Password ?? string.Empty, dto.RememberMe, cancellationToken);
 
         if (!signInResult.Succeeded) throw new UserIsNotLoggedInException();
         
-        return jwtTokenHelper.GenerateJwtToken(dto.Email, dto.Role);
+        return jwtTokenHelper.GenerateJwtToken(dto.Email ?? string.Empty, dto.Role);
     } 
 
     public async Task LogOutAsync(CancellationToken cancellationToken)

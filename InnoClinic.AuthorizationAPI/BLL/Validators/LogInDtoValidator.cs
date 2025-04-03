@@ -14,5 +14,11 @@ public class LoginDtoValidator : AbstractValidator<LogInDto>
 
         RuleFor(x => x.Password)
              .NotEmpty().WithMessage("Please, enter the password");
+
+        RuleFor(x => x.RememberMe)
+            .NotEmpty().WithMessage("Please, choose the option");
+
+        RuleFor(x => x.Role)
+            .NotEmpty().WithMessage("Please, choose the role");
     }
 }
