@@ -12,14 +12,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Verify solution file
+    - name: Find solution file
+      id: find-sln
       run: |
-        echo "Checking solution path..."
-        ls -la ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI/
-        if [ ! -f "./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln" ]; then
-          echo "::error::Solution file not found at expected path"
+        # Ищем первый .sln файл в репозитории
+        sln_path=$(find . -name "*.sln" -print -quit)
+        if [ -z "$sln_path" ]; then
+          echo "::error::No .sln file found in repository"
           exit 1
         fi
+        echo "Found solution at: ${sln_path}"
+        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
+        echo "project_dir=$(dirname "${sln_path}")" >> $GITHUB_OUTPUT
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -27,15 +31,15 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
-      run: dotnet restore InnoClinic.AuthorizationAPI.sln
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
+      run: dotnet restore ${{ steps.find-sln.outputs.sln_path }}
 
     - name: Build
-      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
       run: dotnet build --no-restore --configuration Release
 
     - name: Test
-      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
+      working-directory: ${{ steps.find-sln.outputs.project_dir }}
       run: dotnet test --no-build --verbosity normal --configuration Release
 
   analyze:
@@ -52,7 +56,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        projectBaseDir: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
+        projectBaseDir: ${{ needs.build.outputs.project_dir }}
         args: |
           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
           -Dsonar.projectName=${{ secrets.SONAR_PROJECT_NAME }}
