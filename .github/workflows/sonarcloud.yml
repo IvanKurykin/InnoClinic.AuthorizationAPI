@@ -40,9 +40,9 @@ jobs:
     - name: Sonar Scan
       uses: highbyte/sonarscan-dotnet@v2.3.0
       with:
-        sonarProjectKey: ${{ vars.SONARPROJECTKEY }}
-        sonarProjectName: ${{ vars.SONARPROJECTNAME }}
-        sonarOrganization: ${{ vars.SONARORGANIZATION }}
+        sonarProjectKey: ${{ vars.SONAR_PROJECT_KEY }}
+        sonarProjectName: ${{ vars.SONAR_PROJECT_NAME }}
+        sonarOrganization: ${{ vars.SONAR_ORGANIZATION }}
         dotnetBuildArguments: --configuration Release
         dotnetTestArguments: --no-build --configuration Release --verbosity normal --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.coverage.exclusions="${{env.EXCLUDE_FROM_COVERAGE}}" /d:sonar.exclusions="${{env.EXCLUDE_FROM_SONAR}}" 

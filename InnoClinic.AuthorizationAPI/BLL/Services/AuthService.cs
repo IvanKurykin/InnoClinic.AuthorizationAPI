@@ -40,7 +40,7 @@ public class AuthService(IAuthRepository authRepository, IMapper mapper, IJwtTok
 
         var signInResult = await authRepository.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken);
 
-        if (!signInResult.Succeeded) throw new UserIsNotLoggedIn();
+        if (!signInResult.Succeeded) throw new UserIsNotLoggedInException();
         
         return jwtTokenHelper.GenerateJwtToken(dto.Email, dto.Role);
     } 
