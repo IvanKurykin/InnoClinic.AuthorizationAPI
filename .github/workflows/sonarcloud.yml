@@ -1,53 +1,50 @@
-name: SonarQube Analysis
+name: Management System CI
+
 on:
-  pull_request:
-    branches: [ "*" ]
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  sonarqube:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore dependencies
+        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
+      - name: Build
+        run: dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release
+      - name: Test
+        run: dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --no-build --verbosity normal --configuration Release
+
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0"
-
-      - name: Restore dependencies
-        run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
-
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
-
-      - name: Run SonarQube analysis
-        run: |
-          dotnet sonarscanner begin \
-            /k:"IvanKurykin_InnoClinic.AuthorizationAPI" \
-            /o:"ivankurykin" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.scanner.skipJreProvisioning=true \
-            /d:sonar.cs.vscoveragexml.reportsPaths="**/UnitTests/TestResults/**/coverage.cobertura.xml" \
-            /d:sonar.branch.name="main"
-
-          dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
-
-          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln \
-            --configuration Release \
-            --collect:"XPlat Code Coverage" \
-            --no-build \
-            --logger "trx;LogFileName=testresults.trx" \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=InnoClinic.AuthorizationAPI/UnitTests/TestResults/coverage.cobertura.xml
-
-          echo "Successfull testing. Cheking field TestResults:"
-          ls -R InnoClinic.AuthorizationAPI/UnitTests/TestResults
-
-          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          dotnet-version: 8.0.x
+      - name: Sonar Scan InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
+        uses: highbyte/sonarscan-dotnet@v2.3.0
+        with:
+          sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
+          sonarProjectName: ${{ secrets.SONAR_PROJECT_NAME }}
+          sonarOrganization: ${{ secrets.SONAR_ORGANIZATION }}
+          dotnetBuildArguments: InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release
+          dotnetTestArguments: InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --no-build --configuration Release --verbosity normal --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.coverage.exclusions="${{ secrets.SONAR_EXCLUDE_FROM_COVERAGE }}"
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        SONAR_PROJECT_NAME: ${{ secrets.SONAR_PROJECT_NAME }}
+        SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+        SONAR_EXCLUDE_FROM_COVERAGE: "**/Program.cs, **/Migrations/*, **/DI/*, **/Context/*, **/Profiles/*"
