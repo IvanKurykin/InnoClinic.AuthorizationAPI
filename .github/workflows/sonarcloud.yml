@@ -15,8 +15,11 @@ jobs:
     - name: Find and validate solution file
       id: find_solution
       run: |
-        # Search for solution files
         echo "Searching for solution files..."
+        find . -name "*.sln" | while read -r sln; do
+          echo "Found: $sln"
+        done
+        
         SOLUTION_PATH=$(find . -name "*.sln" -print -quit)
         
         if [ -z "$SOLUTION_PATH" ]; then
@@ -24,7 +27,7 @@ jobs:
           exit 1
         fi
         
-        echo "Found solution at: ${SOLUTION_PATH}"
+        echo "Using solution: $SOLUTION_PATH"
         echo "solution_path=${SOLUTION_PATH}" >> $GITHUB_OUTPUT
         echo "project_dir=$(dirname "${SOLUTION_PATH}")" >> $GITHUB_OUTPUT
 
