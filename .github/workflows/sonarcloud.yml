@@ -9,24 +9,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      project_dir: ${{ steps.set-outputs.outputs.project_dir }}
-      sln_path: ${{ steps.set-outputs.outputs.sln_path }}
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Find solution file
-      id: set-outputs
+    - name: Verify solution file
       run: |
-        sln_path=$(find . -name '*.sln' -print -quit)
-        if [ -z "$sln_path" ]; then
-          echo "::error::No .sln file found in repository"
+        echo "Checking solution path..."
+        ls -la ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI/
+        if [ ! -f "./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln" ]; then
+          echo "::error::Solution file not found at expected path"
           exit 1
         fi
-        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
-        echo "project_dir=$(dirname "$sln_path")" >> $GITHUB_OUTPUT
-        echo "Found solution at: ${sln_path}"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -34,15 +27,15 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      working-directory: ${{ steps.set-outputs.outputs.project_dir }}
-      run: dotnet restore ${{ steps.set-outputs.outputs.sln_path }}
+      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
+      run: dotnet restore InnoClinic.AuthorizationAPI.sln
 
     - name: Build
-      working-directory: ${{ steps.set-outputs.outputs.project_dir }}
+      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
       run: dotnet build --no-restore --configuration Release
 
     - name: Test
-      working-directory: ${{ steps.set-outputs.outputs.project_dir }}
+      working-directory: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
       run: dotnet test --no-build --verbosity normal --configuration Release
 
   analyze:
@@ -53,21 +46,19 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Get project path from build job
-      run: |
-        echo "Project dir: ${{ needs.build.outputs.project_dir }}"
-        echo "Solution path: ${{ needs.build.outputs.sln_path }}"
-
     - name: Sonar Scan
-      uses: highbyte/sonarscan-dotnet@v2.3.0
-      with:
-        sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
-        sonarProjectName: ${{ secrets.SONAR_PROJECT_NAME }}
-        sonarOrganization: ${{ secrets.SONAR_ORGANIZATION }}
-        dotnetBuildArguments: --configuration Release /p:SolutionPath=${{ needs.build.outputs.sln_path }}
-        dotnetTestArguments: --no-build --configuration Release --verbosity normal --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.coverage.exclusions="${{env.EXCLUDE_FROM_COVERAGE}}" /d:sonar.exclusions="${{env.EXCLUDE_FROM_SONAR}}"
-      env: 
-        EXCLUDE_FROM_COVERAGE: "**/Program.cs,**/Extensions/*,**/Exceptions/**,**/Migrations/*,**/Entities/*,**/Enums/**/*,**/MappingConfigurations/*,**/ViewModels/**,**/Utilities/**"
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        EXCLUDE_FROM_SONAR: "**/Migrations/*,**/Dockerfile"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        projectBaseDir: ./InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI
+        args: |
+          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+          -Dsonar.projectName=${{ secrets.SONAR_PROJECT_NAME }}
+          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+          -Dsonar.sources=.
+          -Dsonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
+          -Dsonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+          -Dsonar.coverage.exclusions="**/Program.cs,**/Extensions/*,**/Exceptions/**,**/Migrations/*,**/Entities/*,**/Enums/**/*,**/MappingConfigurations/*,**/ViewModels/**,**/Utilities/**"
+          -Dsonar.exclusions="**/Migrations/*,**/Dockerfile"
