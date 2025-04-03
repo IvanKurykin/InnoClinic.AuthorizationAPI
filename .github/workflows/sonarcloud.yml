@@ -1,4 +1,4 @@
-name: .NET CI with SonarCloud
+name: .NET CI Pipeline
 
 on:
   push:
@@ -7,54 +7,48 @@ on:
     branches: [ "*" ]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: Find and validate solution file
-      id: find_solution
+    - name: Discover solution file
+      id: solution
       run: |
-        echo "Searching for solution files..."
-        find . -name "*.sln" | while read -r sln; do
-          echo "Found: $sln"
-        done
+        echo "::group::Repository structure"
+        ls -R
+        echo "::endgroup::"
         
-        SOLUTION_PATH=$(find . -name "*.sln" -print -quit)
+        sln_path=$(find . -name "*.sln" -print -quit)
         
-        if [ -z "$SOLUTION_PATH" ]; then
-          echo "::error::No .sln file found in repository!"
+        if [ -z "$sln_path" ]; then
+          echo "::error::No .sln file found in the repository!"
           exit 1
         fi
         
-        echo "Using solution: $SOLUTION_PATH"
-        echo "solution_path=${SOLUTION_PATH}" >> $GITHUB_OUTPUT
-        echo "project_dir=$(dirname "${SOLUTION_PATH}")" >> $GITHUB_OUTPUT
-
-    - name: Debug solution info
-      run: |
-        echo "Solution path: ${{ steps.find_solution.outputs.solution_path }}"
-        echo "Project dir: ${{ steps.find_solution.outputs.project_dir }}"
+        echo "Found solution file at: $sln_path"
+        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
+        echo "project_dir=$(dirname "$sln_path")" >> $GITHUB_OUTPUT
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 8.0
 
     - name: Restore dependencies
-      working-directory: ${{ steps.find_solution.outputs.project_dir }}
-      run: dotnet restore ${{ steps.find_solution.outputs.solution_path }}
+      working-directory: ${{ steps.solution.outputs.project_dir }}
+      run: dotnet restore ${{ steps.solution.outputs.sln_path }}
 
     - name: Build solution
-      working-directory: ${{ steps.find_solution.outputs.project_dir }}
+      working-directory: ${{ steps.solution.outputs.project_dir }}
       run: dotnet build --no-restore --configuration Release
 
     - name: Run tests
-      working-directory: ${{ steps.find_solution.outputs.project_dir }}
+      working-directory: ${{ steps.solution.outputs.project_dir }}
       run: dotnet test --no-build --verbosity normal --configuration Release
 
-  analyze:
-    needs: build
+  sonarcloud_analysis:
+    needs: build_and_test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -67,7 +61,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        projectBaseDir: ${{ needs.build.outputs.project_dir }}
+        projectBaseDir: ${{ needs.build_and_test.outputs.project_dir }}
         args: |
           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
           -Dsonar.projectName=${{ secrets.SONAR_PROJECT_NAME }}
