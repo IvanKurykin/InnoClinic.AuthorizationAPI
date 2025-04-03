@@ -1,80 +1,31 @@
 name: SonarQube Analysis
-
 on:
   pull_request:
     branches: [ '*' ]
   push:
     branches: [ 'main' ]
-
 jobs:
   sonarqube:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0'
-
-      - name: Install tools
-        run: |
-          dotnet tool install --global dotnet-sonarscanner
-          dotnet tool install --global coverlet.console
 
       - name: Restore dependencies
         run: dotnet restore InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln
 
+      - name: Install SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
       - name: Run SonarQube analysis
         run: |
-          dotnet sonarscanner begin /k:"IvanKurykin_InnoClinic.AuthorizationAPI" /o:"ivankurykin" `
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml" `
-            /d:sonar.coverage.exclusions="**Test*.cs,**/UnitTests/**" `
-            /d:sonar.test.exclusions="**Test*.cs,**/UnitTests/**" `
-            /d:sonar.tests="UnitTests" `
-            /d:sonar.test.inclusions="**/*Tests.cs,**/UnitTests/**"
-
+          dotnet sonarscanner begin /k:"InnoClinic.AuthorizationAPI" /o:"ivankurykin" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.scanner.skipJreProvisioning=true /d:sonar.cs.vscoveragexml.reportsPaths="**/coverage.cobertura.xml"
           dotnet build InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --no-restore
-
-          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln `
-            --configuration Release `
-            --no-build `
-            --verbosity normal `
-            --collect:"XPlat Code Coverage" `
-            --logger "trx;LogFileName=testresults.trx" `
-            /p:CollectCoverage=true `
-            /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="TestResults\coverage\" `
-            /p:MergeWith="TestResults\coverage\coverage.cobertura.xml" `
-            /p:Include="[BLL]*,[DAL]*,[API]*" `
-            /p:Exclude="[UnitTests]*"
-
-          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
-          if (-not $coverageFile) {
-              Write-Host "##[error] Coverage file not found!"
-              Get-ChildItem -Path . -Recurse -Filter "*.xml" | ForEach-Object { Write-Host "Found XML file: $($_.FullName)" }
-              exit 1
-          }
-          Write-Host "Coverage file found: $($coverageFile.FullName)"
-
+          dotnet test InnoClinic.AuthorizationAPI/InnoClinic.AuthorizationAPI.sln --configuration Release --collect:"XPlat Code Coverage" --no-build --logger "trx;LogFileName=testresults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-results
-          path: |
-            **/TestResults/*.trx
-            **/TestResults/coverage/coverage.cobertura.xml
