@@ -1,4 +1,4 @@
-name: .NET with SonarCloud
+name: .NET CI with SonarCloud
 
 on:
   push:
@@ -12,18 +12,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Find solution file
-      id: find-sln
+    - name: Find and validate solution file
+      id: find_solution
       run: |
-        # Ищем первый .sln файл в репозитории
-        sln_path=$(find . -name "*.sln" -print -quit)
-        if [ -z "$sln_path" ]; then
-          echo "::error::No .sln file found in repository"
+        # Поиск всех .sln файлов
+        echo "Searching for solution files..."
+        find . -name "*.sln" | while read -r sln; do
+          echo "Found: $sln"
+        done
+        
+        SOLUTION_PATH=$(find . -name "*.sln" -print -quit)
+        
+        if [ -z "$SOLUTION_PATH" ]; then
+          echo "::error::No .sln file found in repository!"
           exit 1
         fi
-        echo "Found solution at: ${sln_path}"
-        echo "sln_path=${sln_path}" >> $GITHUB_OUTPUT
-        echo "project_dir=$(dirname "${sln_path}")" >> $GITHUB_OUTPUT
+        
+        echo "Using solution: $SOLUTION_PATH"
+        echo "solution_path=${SOLUTION_PATH}" >> $GITHUB_OUTPUT
+        echo "project_dir=$(dirname "${SOLUTION_PATH}")" >> $GITHUB_OUTPUT
+
+    - name: Debug solution info
+      run: |
+        echo "Solution path: ${{ steps.find_solution.outputs.solution_path }}"
+        echo "Project dir: ${{ steps.find_solution.outputs.project_dir }}"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -31,15 +43,15 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      working-directory: ${{ steps.find-sln.outputs.project_dir }}
-      run: dotnet restore ${{ steps.find-sln.outputs.sln_path }}
+      working-directory: ${{ steps.find_solution.outputs.project_dir }}
+      run: dotnet restore ${{ steps.find_solution.outputs.solution_path }}
 
-    - name: Build
-      working-directory: ${{ steps.find-sln.outputs.project_dir }}
+    - name: Build solution
+      working-directory: ${{ steps.find_solution.outputs.project_dir }}
       run: dotnet build --no-restore --configuration Release
 
-    - name: Test
-      working-directory: ${{ steps.find-sln.outputs.project_dir }}
+    - name: Run tests
+      working-directory: ${{ steps.find_solution.outputs.project_dir }}
       run: dotnet test --no-build --verbosity normal --configuration Release
 
   analyze:
@@ -50,7 +62,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Sonar Scan
+    - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -62,7 +74,7 @@ jobs:
           -Dsonar.projectName=${{ secrets.SONAR_PROJECT_NAME }}
           -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
           -Dsonar.sources=.
-          -Dsonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
-          -Dsonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-          -Dsonar.coverage.exclusions="**/Program.cs,**/Extensions/*,**/Exceptions/**,**/Migrations/*,**/Entities/*,**/Enums/**/*,**/MappingConfigurations/*,**/ViewModels/**,**/Utilities/**"
-          -Dsonar.exclusions="**/Migrations/*,**/Dockerfile"
+          -Dsonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          -Dsonar.cs.vstest.reportsPaths="**/*.trx"
+          -Dsonar.coverage.exclusions="**/Program.cs,**/Migrations/**"
+          -Dsonar.exclusions="**/wwwroot/**"
