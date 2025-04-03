@@ -11,7 +11,7 @@ public class AuthRepository(UserManager<User> userManager, ApplicationDbContext 
     public async Task<IdentityResult> RegisterAsync(User user, string password, CancellationToken cancellationToken = default)
     {
         await userManager.CreateAsync(user, password);
-        await userManager.AddToRoleAsync(user, Roles.Patient);
+        await userManager.AddToRoleAsync(user, Roles.Doctor);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return IdentityResult.Success;
@@ -22,4 +22,10 @@ public class AuthRepository(UserManager<User> userManager, ApplicationDbContext 
 
     public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default) =>
         await userManager.FindByEmailAsync(email);
+
+    public async Task<IList<string>> GetUserRolesAsync(User user, CancellationToken cancellationToken = default) =>
+        await userManager.GetRolesAsync(user);
+
+    public async Task LogOutAsync(CancellationToken cancellationToken = default) =>
+        await signInManager.SignOutAsync();
 }

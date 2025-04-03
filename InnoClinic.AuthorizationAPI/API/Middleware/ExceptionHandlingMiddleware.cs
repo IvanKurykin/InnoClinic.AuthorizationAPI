@@ -44,7 +44,9 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
         {
             ArgumentNullException => StatusCodes.Status400BadRequest,
             InvalidOperationException => StatusCodes.Status400BadRequest,
+            UserIsNotLoggedIn => StatusCodes.Status401Unauthorized,
             UserNotFoundException => StatusCodes.Status401Unauthorized,
+            ForbiddenAccessException => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError
         };
 
