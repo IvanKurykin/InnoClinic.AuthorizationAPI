@@ -1,5 +1,8 @@
-﻿namespace BLL.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace BLL.Exceptions;
+
+[ExcludeFromCodeCoverage]
 public class UserNotFoundException : Exception
 {
     private const string DefaultMessage = "The user was not found";

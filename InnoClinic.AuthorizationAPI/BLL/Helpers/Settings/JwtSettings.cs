@@ -1,5 +1,8 @@
-﻿namespace BLL.Helpers.Settings;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace BLL.Helpers.Settings;
+
+[ExcludeFromCodeCoverage]
 public class JwtSettings
 {
     public string? SecretKey { get; set; }

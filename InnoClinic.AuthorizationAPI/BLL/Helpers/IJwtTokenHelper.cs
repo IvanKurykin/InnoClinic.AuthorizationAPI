@@ -1,4 +1,6 @@
-﻿namespace BLL.Helpers;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace BLL.Helpers;
 
 public interface IJwtTokenHelper
 {

@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BLL.Helpers.Settings;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BLL.Helpers;
 
+[ExcludeFromCodeCoverage]
 public class JwtTokenHelper : IJwtTokenHelper
 {
     private readonly JwtSettings _jwtSettings;

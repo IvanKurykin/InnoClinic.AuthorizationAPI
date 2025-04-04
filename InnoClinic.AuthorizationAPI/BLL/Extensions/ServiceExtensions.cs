@@ -1,4 +1,5 @@
-﻿using BLL.Helpers;
+﻿using System.Diagnostics.CodeAnalysis;
+using BLL.Helpers;
 using BLL.Interfaces;
 using BLL.Mapper;
 using BLL.Services;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BLL.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class ServiceExtensions
 {
     public static IServiceCollection AddBusinessLoginLayerServices(this IServiceCollection services, IConfiguration configuration)

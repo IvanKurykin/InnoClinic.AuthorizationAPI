@@ -1,4 +1,5 @@
-﻿using BLL.DTO;
+﻿using System.Diagnostics.CodeAnalysis;
+using BLL.DTO;
 using Microsoft.AspNetCore.Identity;
 
 namespace BLL.Interfaces;

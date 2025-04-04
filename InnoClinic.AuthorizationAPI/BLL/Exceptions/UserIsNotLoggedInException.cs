@@ -1,5 +1,8 @@
-﻿namespace BLL.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace BLL.Exceptions;
+
+[ExcludeFromCodeCoverage]
 public class UserIsNotLoggedInException : Exception
 {
     private const string DefaultMessage = "The user is not logged in. Try again.";

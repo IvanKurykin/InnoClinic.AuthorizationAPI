@@ -1,5 +1,8 @@
-﻿namespace BLL.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace BLL.Exceptions;
+
+[ExcludeFromCodeCoverage]
 public class ForbiddenAccessException : Exception
 {
     private const string DefaultMessage = "The user does not have access.";
