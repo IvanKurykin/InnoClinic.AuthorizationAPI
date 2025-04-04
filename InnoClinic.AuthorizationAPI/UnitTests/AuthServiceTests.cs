@@ -77,8 +77,8 @@ public class AuthServiceTests
         {
             UserName = TestConstans.TestUserName,
             Email = TestConstans.TestUserEmail,
-            Password = password,
-            Role = role
+            Password = password ?? string.Empty,
+            Role = role ?? string.Empty
         };
 
         var user = new User { UserName = dto.UserName, Email = dto.Email };
