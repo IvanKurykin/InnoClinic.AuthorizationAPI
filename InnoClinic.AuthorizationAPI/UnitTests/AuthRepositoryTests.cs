@@ -10,8 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using UnitTests.TestCases;
-using UnitTests.TestData;
 
 namespace UnitTests;
 
@@ -53,6 +51,20 @@ public class AuthRepositoryTests
         _authRepository = new AuthRepository(_userManager.Object, _dbContext, _signInManager.Object);
     }
 
+    public static IEnumerable<object[]> LoginTestCases()
+    {
+        yield return new object[] { "user1", "pass1", false, SignInResult.Success, true };
+        yield return new object[] { "user2", "pass2", true, SignInResult.Failed, false };
+        yield return new object[] { "user3", "pass3", false, SignInResult.LockedOut, false };
+    }
+
+    public static IEnumerable<object?[]> UserEmailTestCases()
+    {
+        yield return new object?[] { "nonexistent@example.com", null };
+        yield return new object?[] { "existing@example.com",
+                new User { Email = "existing@example.com", UserName = TestConstans.TestUserName } };
+    }
+
     [Fact]
     public async Task RegisterAsyncShouldRegisterUserWithRole()
     {
@@ -70,7 +82,7 @@ public class AuthRepositoryTests
     }
 
     [Theory]
-    [ClassData(typeof(LoginTestCases))]
+    [MemberData(nameof(LoginTestCases))]
     public async Task LogInAsyncShouldReturnExpectedResult(string userName, string password, bool rememberMe, SignInResult expectedResult, bool expectedSuccess)
     {
         _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(expectedResult);
@@ -82,7 +94,7 @@ public class AuthRepositoryTests
     }
 
     [Theory]
-    [ClassData(typeof(UserEmailTestCases))]
+    [MemberData(nameof(UserEmailTestCases))]
     public async Task GetUserByEmailAsyncShouldReturnExpectedUser(string email, User expectedUser)
     {
         _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(expectedUser);
