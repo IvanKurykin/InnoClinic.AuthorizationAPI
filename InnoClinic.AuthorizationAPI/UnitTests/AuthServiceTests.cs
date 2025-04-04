@@ -30,47 +30,8 @@ public class AuthServiceTests
         _authService = new AuthService(_authRepositoryMock.Object, _mapperMock.Object, _jwtTokenHelperMock.Object, _httpContextAccessorMock.Object);
     }
 
-    public static IEnumerable<object[]> ValidRegisterData =>
-        new List<object[]>
-        {
-            new object[] { TestConstans.TestUserName, TestConstans.TestUserEmail, TestConstans.TestUserPassword, Roles.Admin },
-            new object[] { "anotherUser", "another@email.com", "P@ssw0rd123", Roles.Patient }
-        };
-
-    public static IEnumerable<object[]> NullRegisterFields =>
-        new List<object[]>
-        {
-            new object[] { nameof(RegisterDto.UserName) },
-            new object[] { nameof(RegisterDto.Password) },
-            new object[] { nameof(RegisterDto.Role) }
-        };
-
-    public static IEnumerable<object[]> NullLoginFields =>
-        new List<object[]>
-        {
-            new object[] { nameof(LogInDto.Email) },
-            new object[] { nameof(LogInDto.Password) },
-            new object[] { nameof(LogInDto.Role) }
-        };
-
-    public static IEnumerable<object[]> RegisterWithEmptyValuesData =>
-    new List<object[]>
-    {
-        new object[] { null, null }, 
-        new object[] { null, Roles.Admin }, 
-        new object[] { TestConstans.TestUserPassword, null } 
-    };
-
-    public static IEnumerable<object[]> LoginWithEmptyValuesData =>
-        new List<object[]>
-        {
-        new object[] { null, null }, 
-        new object[] { null, Roles.Admin }, 
-        new object[] { TestConstans.TestUserEmail, null } 
-        };
-
     [Theory]
-    [MemberData(nameof(RegisterWithEmptyValuesData))]
+    [ClassData(typeof(RegisterWithEmptyValuesData))]
     public async Task RegisterAsyncShouldHandleNullPasswordAndRole(string password, string role)
     {
         var dto = new RegisterDto
@@ -96,7 +57,7 @@ public class AuthServiceTests
     }
 
     [Theory]
-    [MemberData(nameof(ValidRegisterData))]
+    [ClassData(typeof(ValidRegisterData))]
     public async Task RegisterAsyncShouldReturnSuccessWhenValidData(string userName, string email, string password, string role)
     {
         var dto = new RegisterDto
@@ -120,7 +81,7 @@ public class AuthServiceTests
     }
 
     [Theory]
-    [MemberData(nameof(NullRegisterFields))]
+    [ClassData(typeof(NullRegisterFields))]
     public async Task RegisterAsyncShouldThrowArgumentNullExceptionWhenRequiredFieldIsNull(string propertyName)
     {
         var dto = new RegisterDto
@@ -137,7 +98,7 @@ public class AuthServiceTests
     }
 
     [Theory]
-    [MemberData(nameof(LoginWithEmptyValuesData))]
+    [ClassData(typeof(LoginWithEmptyValuesData))]
     public async Task LogInAsyncShouldThrowWhenEmailOrRoleIsNull(string email, string role)
     {
         var dto = new LogInDto
@@ -155,7 +116,7 @@ public class AuthServiceTests
     [InlineData(null, TestConstans.TestUserPassword, false, Roles.Admin)]
     [InlineData(TestConstans.TestUserEmail, null, false, Roles.Admin)]
     [InlineData(TestConstans.TestUserEmail, TestConstans.TestUserPassword, false, null)]
-    public async Task LogInAsyncShouldThrowForNullFields(string email, string password, bool rememberMe, string role)
+    public async Task LogInAsyncShouldThrowForNullFields(string? email, string? password, bool rememberMe, string? role)
     {
         var dto = new LogInDto
         {
@@ -172,7 +133,7 @@ public class AuthServiceTests
     [InlineData(null, TestConstans.TestUserPassword, Roles.Admin)] 
     [InlineData(TestConstans.TestUserEmail, null, Roles.Admin)] 
     [InlineData(TestConstans.TestUserEmail, TestConstans.TestUserPassword, null)] 
-    public async Task LogInAsyncShouldPassEmptyStringToRepositoryWhenFieldIsNull(string email, string password, string role)
+    public async Task LogInAsyncShouldPassEmptyStringToRepositoryWhenFieldIsNull(string? email, string? password, string? role)
     {
         var dto = new LogInDto
         {
@@ -211,7 +172,7 @@ public class AuthServiceTests
     }
 
     [Theory]
-    [MemberData(nameof(NullLoginFields))]
+    [ClassData(typeof(NullLoginFields))]
     public async Task LogInAsyncShouldThrowArgumentNullExceptionWhenRequiredFieldIsNull(string propertyName)
     {
         var dto = new LogInDto
@@ -329,7 +290,7 @@ public class AuthServiceTests
     public async Task LogOutAsyncShouldNotThrowWhenHttpContextIsNull()
     {
         var cancellationToken = new CancellationToken();
-        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns((HttpContext)null);
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns((HttpContext?)null);
 
         var exception = await Record.ExceptionAsync(() =>
             _authService.LogOutAsync(cancellationToken));

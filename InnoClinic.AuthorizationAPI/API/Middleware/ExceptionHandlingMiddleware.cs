@@ -16,7 +16,7 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
         }
         catch (Exception e)
         {
-            logger.LogError(e, e.Message);
+            logger.LogError(e, "An unhandled exception occurred: {ExceptionMessage}", e.Message);
             await HandleExceptionAsync(context, e);
         }
     }
@@ -47,7 +47,7 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
             UserIsNotLoggedInException => StatusCodes.Status401Unauthorized,
             UserNotFoundException => StatusCodes.Status401Unauthorized,
             ForbiddenAccessException => StatusCodes.Status403Forbidden,
-            JwtSecretKeyIsNotConfigured => StatusCodes.Status400BadRequest,
+            JwtSecretKeyIsNotConfiguredException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
 
