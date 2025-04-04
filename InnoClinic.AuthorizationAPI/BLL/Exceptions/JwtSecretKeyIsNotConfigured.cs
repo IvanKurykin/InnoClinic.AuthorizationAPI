@@ -1,5 +1,8 @@
-﻿namespace BLL.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace BLL.Exceptions;
+
+[ExcludeFromCodeCoverage]
 public class JwtSecretKeyIsNotConfigured : Exception
 {
     private const string DefaultMessage = "JWT Secret Key is not configured.";

@@ -15,10 +15,6 @@
 	
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
-		<PackageReference Include="coverlet.collector" Version="6.0.4">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="FluentAssertions" Version="8.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.3" />

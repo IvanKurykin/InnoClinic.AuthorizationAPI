@@ -48,6 +48,7 @@ namespace UnitTests.Middleware
         [InlineData(typeof(UserIsNotLoggedInException), StatusCodes.Status401Unauthorized)]
         [InlineData(typeof(UserNotFoundException), StatusCodes.Status401Unauthorized)]
         [InlineData(typeof(ForbiddenAccessException), StatusCodes.Status403Forbidden)]
+        [InlineData(typeof(JwtSecretKeyIsNotConfigured), StatusCodes.Status400BadRequest)]
         [InlineData(typeof(Exception), StatusCodes.Status500InternalServerError)]
         public async Task InvokeAsyncExceptionHandlingReturnsCorrectStatusCode(Type exceptionType, int expectedStatusCode)
         {
