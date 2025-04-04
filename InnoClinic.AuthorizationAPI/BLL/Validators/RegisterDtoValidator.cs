@@ -1,6 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using BLL.DTO;
-using BLL.Helpers.Constants;
+﻿using BLL.DTO;
+using BLL.Helpers;
 using FluentValidation;
 
 namespace BLL.Validators;
@@ -11,7 +10,7 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Please, enter the email")
-            .Must(BeValidEmail).WithMessage("Invalid email format");
+            .Must(ValidateEmail.BeValidEmail).WithMessage("Invalid email format");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Please, enter the password")
@@ -19,16 +18,15 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$")
             .WithMessage("Password must contain at least one uppercase, lowercase, digit and special character");
 
+        RuleFor(x => x.UserName)
+            .NotEmpty().WithMessage("Please, enter the user name")
+            .Length(6, 20).WithMessage("User name must be 6-20 characters");
+
         RuleFor(x => x.ReEnteredPassword)
             .NotEmpty().WithMessage("Please, reenter the password")
             .Must((model, field) => field == model.Password);
-    }
-    private bool BeValidEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email)) return false;
 
-        return Regex.IsMatch(email,
-            ValidationPatterns.EmailRegex,
-            RegexOptions.IgnoreCase);
+        RuleFor(x => x.Role)
+            .NotEmpty().WithMessage("Please, choose the role");
     }
 }

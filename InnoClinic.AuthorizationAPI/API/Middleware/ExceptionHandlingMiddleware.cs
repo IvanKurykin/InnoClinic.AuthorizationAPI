@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
 using FluentValidation;
-using BLL.Exceptions;
 using API.Controllers;
+using System.Security.Authentication;
+using BLL.Exceptions;
 
 namespace API.Middleware;
 
@@ -15,7 +16,7 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
         }
         catch (Exception e)
         {
-            logger.LogError(e, e.Message);
+            logger.LogError(e, "An unhandled exception occurred: {ExceptionMessage}", e.Message);
             await HandleExceptionAsync(context, e);
         }
     }
@@ -41,8 +42,12 @@ public class ExceptionHandlingMiddleware(ILogger<AuthController> logger) : IMidd
 
         context.Response.StatusCode = exception switch
         {
-            EmailAndPasswordNullException => StatusCodes.Status400BadRequest,
-            PasswordNullException => StatusCodes.Status400BadRequest,
+            ArgumentNullException => StatusCodes.Status400BadRequest,
+            InvalidOperationException => StatusCodes.Status400BadRequest,
+            UserIsNotLoggedInException => StatusCodes.Status401Unauthorized,
+            UserNotFoundException => StatusCodes.Status401Unauthorized,
+            ForbiddenAccessException => StatusCodes.Status403Forbidden,
+            JwtSecretKeyIsNotConfiguredException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
 
