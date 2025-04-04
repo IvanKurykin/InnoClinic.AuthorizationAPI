@@ -1,5 +1,6 @@
 ﻿using BLL.DTO;
 using BLL.Validators;
+using DAL.Constants;
 using FluentValidation.TestHelper;
 
 namespace UnitTests
@@ -14,7 +15,7 @@ namespace UnitTests
         [InlineData("test@example.com", true)]
         public void EmailValidation(string email, bool expectedValid)
         {
-            var model = new RegisterDto { Email = email };
+            var model = new RegisterDto { Email = email, Role = Roles.Patient};
             var result = _validator.TestValidate(model);
 
             if (expectedValid)
@@ -28,7 +29,7 @@ namespace UnitTests
         {
             var model = new RegisterDto
             {
-                Password = "P@ssword1",
+                Password = TestConstans.TestUserPassword,
                 ReEnteredPassword = "Different1!"
             };
 

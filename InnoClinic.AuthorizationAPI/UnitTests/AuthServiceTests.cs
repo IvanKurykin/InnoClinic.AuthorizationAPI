@@ -173,4 +173,77 @@ public class AuthServiceTests
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() => _authService.LogInAsync(dto, cancellationToken));
     }
+
+    [Fact]
+    public async Task LogInAsyncShouldThrowInvalidOperationExceptionWhenUserNameIsNull()
+    {
+        var dto = new LogInDto
+        {
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword,
+            Role = Roles.Admin,
+            RememberMe = false
+        };
+
+        var user = new User { Email = dto.Email, UserName = null };
+        var cancellationToken = new CancellationToken();
+
+        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, cancellationToken)).ReturnsAsync(user);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogInAsyncShouldThrowUserIsNotLoggedInExceptionWhenSignInFails()
+    {
+        var dto = new LogInDto
+        {
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword,
+            Role = Roles.Admin,
+            RememberMe = false
+        };
+
+        var user = new User { Email = dto.Email, UserName = TestConstans.TestUserName };
+        var cancellationToken = new CancellationToken();
+
+        _authRepositoryMock.Setup(x => x.GetUserByEmailAsync(dto.Email, cancellationToken)).ReturnsAsync(user);
+        _authRepositoryMock.Setup(x => x.GetUserRolesAsync(user, cancellationToken)).ReturnsAsync(new List<string> { Roles.Admin });
+        _authRepositoryMock.Setup(x => x.LogInAsync(user.UserName, dto.Password, dto.RememberMe, cancellationToken)).ReturnsAsync(SignInResult.Failed);
+        
+        await Assert.ThrowsAsync<UserIsNotLoggedInException>(() =>
+            _authService.LogInAsync(dto, cancellationToken));
+    }
+
+    [Fact]
+    public async Task LogOutAsyncShouldCallRepositoryAndDeleteCookie()
+    {
+        var cancellationToken = new CancellationToken();
+        var cookiesMock = new Mock<IResponseCookies>();
+        var mockResponse = new Mock<HttpResponse>();
+        mockResponse.Setup(x => x.Cookies).Returns(cookiesMock.Object);
+        var mockHttpContext = new Mock<HttpContext>();
+        mockHttpContext.Setup(x => x.Response).Returns(mockResponse.Object);
+
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(mockHttpContext.Object);
+
+        await _authService.LogOutAsync(cancellationToken);
+
+        _authRepositoryMock.Verify(x => x.LogOutAsync(cancellationToken), Times.Once);
+        cookiesMock.Verify(x => x.Delete("jwt"), Times.Once);
+    }
+
+    [Fact]
+    public async Task LogOutAsyncShouldNotThrowWhenHttpContextIsNull()
+    {
+        var cancellationToken = new CancellationToken();
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns((HttpContext)null);
+
+        var exception = await Record.ExceptionAsync(() =>
+            _authService.LogOutAsync(cancellationToken));
+
+        Assert.Null(exception);
+        _authRepositoryMock.Verify(x => x.LogOutAsync(cancellationToken), Times.Once);
+    }
 }

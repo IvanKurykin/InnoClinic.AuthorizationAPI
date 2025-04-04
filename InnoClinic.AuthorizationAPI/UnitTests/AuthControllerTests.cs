@@ -47,6 +47,31 @@ public class AuthControllerTests
     }
 
     [Fact]
+    public async Task RegisterAsyncShouldReturnBadRequestWhenRegistrationFails()
+    {
+        var dto = new RegisterDto
+        {
+            UserName = TestConstans.TestUserName,
+            Email = TestConstans.TestUserEmail,
+            Password = TestConstans.TestUserPassword
+        };
+        var cancellationToken = new CancellationToken();
+
+        var errors = new List<IdentityError>
+    {
+        new IdentityError { Code = "Error1", Description = "Description1" }
+    };
+        var failedResult = IdentityResult.Failed(errors.ToArray());
+        _authServiceMock.Setup(x => x.RegisterAsync(dto, cancellationToken)).ReturnsAsync(failedResult);
+
+        var result = await _authController.RegisterAsync(dto, cancellationToken);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = result as BadRequestObjectResult;
+        badRequestResult!.Value.Should().BeEquivalentTo(errors);
+    }
+
+    [Fact]
     public async Task LogInAsyncShouldSetJwtCookieAndReturnOk()
     {
         var dto = new LogInDto { Email = "test@example.com", Password = "Password123!" };
@@ -76,6 +101,19 @@ public class AuthControllerTests
     }
 
     [Fact]
+    public async Task LogOutAsyncShouldReturnOkWhenAuthorized()
+    {
+        var cancellationToken = new CancellationToken();
+        _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, Roles.Patient) }));
+
+        var result = await _authController.LogOutAsync(cancellationToken);
+
+        result.Should().BeOfType<OkObjectResult>();
+        (result as OkObjectResult)!.Value.Should().Be(Messages.UserLoggedOutSuccessfully);
+        _authServiceMock.Verify(x => x.LogOutAsync(cancellationToken), Times.Once);
+    }
+
+    [Fact]
     public async Task LogOutAsAWorkerAsyncShouldReturnOkWhenAuthorized()
     {
         var cancellationToken = new CancellationToken();
@@ -85,17 +123,5 @@ public class AuthControllerTests
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
         okResult!.Value.Should().Be(Messages.UserLoggedOutSuccessfully);
-    }
-
-    [Fact]
-    public async Task LogOutAsAWorkerAsyncShouldReturnOk_WhenAuthorized()
-    {
-        var cancellationToken = new CancellationToken();
-        _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, Roles.Admin) }));
-
-        var result = await _authController.LogOutAsAWorkerAsync(cancellationToken);
-        
-        result.Should().BeOfType<OkObjectResult>();
-        (result as OkObjectResult)!.Value.Should().Be(Messages.UserLoggedOutSuccessfully);
     }
 }
