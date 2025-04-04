@@ -11,7 +11,7 @@ namespace UnitTests.Middleware
         public async Task InvokeAsyncAddsAuthorizationHeaderWhenJwtCookieExists()
         {
             var context = new DefaultHttpContext();
-            context.Request.Headers["Cookie"] = "jwt=test-token"; 
+            context.Request.Headers.Cookie = "jwt=test-token"; 
 
             var nextMock = new Mock<RequestDelegate>();
             var middleware = new JwtCookieToHeaderMiddleware(nextMock.Object);
@@ -19,7 +19,7 @@ namespace UnitTests.Middleware
             await middleware.InvokeAsync(context);
 
             context.Request.Headers.Should().ContainKey("Authorization");
-            context.Request.Headers["Authorization"].Should().AllBe("Bearer test-token");
+            context.Request.Headers.Authorization.Should().AllBe("Bearer test-token");
             nextMock.Verify(next => next(context), Times.Once);
         }
 
@@ -28,12 +28,11 @@ namespace UnitTests.Middleware
         {
             var context = new DefaultHttpContext();
             var nextMock = new Mock<RequestDelegate>();
-
             var middleware = new JwtCookieToHeaderMiddleware(nextMock.Object);
 
             await middleware.InvokeAsync(context);
 
-            context.Request.Headers.Should().NotContainKey("Authorization");
+            context.Request.Headers.Authorization.Should().BeNullOrEmpty();
             nextMock.Verify(next => next(context), Times.Once);
         }
 

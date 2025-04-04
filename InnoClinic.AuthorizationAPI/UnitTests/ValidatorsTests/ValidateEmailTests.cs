@@ -11,7 +11,7 @@ public class ValidateEmailTests
     [InlineData("invalid", false)]
     [InlineData("missing@tld", false)]
     [InlineData("@domain.com", false)]
-    public void BeValidEmailTestCases(string email, bool expectedResult)
+    public void BeValidEmailTestCases(string? email, bool expectedResult)
     {
         var result = ValidateEmail.BeValidEmail(email);
         

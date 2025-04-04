@@ -20,7 +20,7 @@ public class JwtTokenHelper : IJwtTokenHelper
 
     public string GenerateJwtToken(string email, string role)
     {
-        ValidateSecretKey(_jwtSettings.SecretKey);
+        ValidateSecretKey(_jwtSettings.SecretKey ?? throw new InvalidOperationException("JWT Secret Key is not configured"));
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
@@ -31,13 +31,13 @@ public class JwtTokenHelper : IJwtTokenHelper
         return tokenString;
     }
 
-    public void ValidateSecretKey(string secretKey)
+    public static void ValidateSecretKey(string secretKey)
     {
         if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 32)
             throw new InvalidOperationException();
     }
 
-    public IEnumerable<Claim> CreateClaims(string email, string role)
+    public static IEnumerable<Claim> CreateClaims(string email, string role)
     {
         var claims = new List<Claim>
         { 
@@ -49,7 +49,6 @@ public class JwtTokenHelper : IJwtTokenHelper
 
         return claims;
     }
-
     public SecurityTokenDescriptor CreateTokenDescriptor(string email, byte[] key, string role)
     {
         return new SecurityTokenDescriptor
@@ -57,8 +56,8 @@ public class JwtTokenHelper : IJwtTokenHelper
             Subject = new ClaimsIdentity(CreateClaims(email, role)),
             Expires = DateTime.UtcNow.AddHours(_jwtSettings.ExpiryInHours),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
-            Issuer = _jwtSettings.Issuer,
-            Audience = _jwtSettings.Audience
+            Issuer = _jwtSettings.Issuer ?? throw new InvalidOperationException(),
+            Audience = _jwtSettings.Audience ?? throw new InvalidOperationException()
         };
     }
 }
