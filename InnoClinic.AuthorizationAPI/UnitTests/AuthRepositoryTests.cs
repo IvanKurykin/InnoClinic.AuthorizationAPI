@@ -1,4 +1,5 @@
-﻿using DAL.Constants;
+﻿using System.Diagnostics.CodeAnalysis;
+using DAL.Constants;
 using DAL.Context;
 using DAL.Entities;
 using DAL.Repositories;
@@ -81,6 +82,7 @@ public class AuthRepositoryTests
         result.Succeeded.Should().BeTrue();
     }
 
+    [ExcludeFromCodeCoverage]
     [Theory]
     [MemberData(nameof(LoginTestCases))]
     public async Task LogInAsyncShouldReturnExpectedResult(string userName, string password, bool rememberMe, SignInResult expectedResult, bool expectedSuccess)
@@ -93,6 +95,7 @@ public class AuthRepositoryTests
         result.Succeeded.Should().Be(expectedSuccess);
     }
 
+    [ExcludeFromCodeCoverage]
     [Theory]
     [MemberData(nameof(UserEmailTestCases))]
     public async Task GetUserByEmailAsyncShouldReturnExpectedUser(string email, User expectedUser)
