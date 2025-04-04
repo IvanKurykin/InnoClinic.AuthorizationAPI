@@ -1,4 +1,4 @@
-﻿namespace UnitTests.TestData;
+﻿namespace UnitTests.TestCases;
 
 using DAL.Constants;
 using UnitTests;

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using DAL.Constants;
+﻿using DAL.Constants;
 using DAL.Context;
 using DAL.Entities;
 using DAL.Repositories;
@@ -11,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using UnitTests.TestCaces;
+using UnitTests.TestCases;
 
 namespace UnitTests;
 
@@ -20,7 +21,7 @@ public class AuthRepositoryTests
     private readonly Mock<SignInManager<User>> _signInManager;
     private readonly AuthRepository _authRepository;
     private readonly ApplicationDbContext _dbContext;
-
+    
     public AuthRepositoryTests()
     {
         var storeMock = new Mock<IUserStore<User>>();
@@ -52,20 +53,6 @@ public class AuthRepositoryTests
         _authRepository = new AuthRepository(_userManager.Object, _dbContext, _signInManager.Object);
     }
 
-    public static IEnumerable<object[]> LoginTestCases()
-    {
-        yield return new object[] { "user1", "pass1", false, SignInResult.Success, true };
-        yield return new object[] { "user2", "pass2", true, SignInResult.Failed, false };
-        yield return new object[] { "user3", "pass3", false, SignInResult.LockedOut, false };
-    }
-
-    public static IEnumerable<object?[]> UserEmailTestCases()
-    {
-        yield return new object?[] { "nonexistent@example.com", null };
-        yield return new object?[] { "existing@example.com",
-                new User { Email = "existing@example.com", UserName = TestConstans.TestUserName } };
-    }
-
     [Fact]
     public async Task RegisterAsyncShouldRegisterUserWithRole()
     {
@@ -82,9 +69,8 @@ public class AuthRepositoryTests
         result.Succeeded.Should().BeTrue();
     }
 
-    [ExcludeFromCodeCoverage]
     [Theory]
-    [MemberData(nameof(LoginTestCases))]
+    [ClassData(typeof(LoginTestCases))]
     public async Task LogInAsyncShouldReturnExpectedResult(string userName, string password, bool rememberMe, SignInResult expectedResult, bool expectedSuccess)
     {
         _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(expectedResult);
@@ -95,9 +81,8 @@ public class AuthRepositoryTests
         result.Succeeded.Should().Be(expectedSuccess);
     }
 
-    [ExcludeFromCodeCoverage]
     [Theory]
-    [MemberData(nameof(UserEmailTestCases))]
+    [ClassData(typeof(UserEmailTestCases))]
     public async Task GetUserByEmailAsyncShouldReturnExpectedUser(string email, User expectedUser)
     {
         _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(expectedUser);
