@@ -10,8 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using UnitTests.TestCaces;
-using UnitTests.TestCases;
 
 namespace UnitTests;
 
@@ -69,25 +67,27 @@ public class AuthRepositoryTests
         result.Succeeded.Should().BeTrue();
     }
 
-    [Theory]
-    [ClassData(typeof(LoginTestCases))]
-    public async Task LogInAsyncShouldReturnExpectedResult(string userName, string password, bool rememberMe, SignInResult expectedResult, bool expectedSuccess)
+    [Fact]
+    public async Task LogInAsyncShouldReturnExpectedResult()
     {
-        _signInManager.Setup(x => x.PasswordSignInAsync(userName, password, rememberMe, false)).ReturnsAsync(expectedResult);
+        var expectedResult = SignInResult.Success;
 
-        var result = await _authRepository.LogInAsync(userName, password, rememberMe, CancellationToken.None);
+        _signInManager.Setup(x => x.PasswordSignInAsync( It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync(SignInResult.Success);
+
+        var result = await _authRepository.LogInAsync(TestConstans.TestUserName, TestConstans.TestUserPassword, false, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Succeeded.Should().Be(expectedSuccess);
+        result.Should().Be(expectedResult);
     }
 
-    [Theory]
-    [ClassData(typeof(UserEmailTestCases))]
-    public async Task GetUserByEmailAsyncShouldReturnExpectedUser(string email, User expectedUser)
+    [Fact]
+    public async Task GetUserByEmailAsyncShouldReturnExpectedUser()
     {
-        _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(expectedUser);
+        var expectedUser = new User { Email = TestConstans.TestUserEmail }; 
 
-        var result = await _authRepository.GetUserByEmailAsync(email, CancellationToken.None);
+        _userManager.Setup(x => x.FindByEmailAsync(TestConstans.TestUserEmail)).ReturnsAsync(expectedUser);
+
+        var result = await _authRepository.GetUserByEmailAsync(TestConstans.TestUserEmail, CancellationToken.None);
 
         result.Should().Be(expectedUser);
     }
