@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿namespace UnitTests.TestData;
+
+using Microsoft.AspNetCore.Identity;
 using UnitTests;
 
 public class LoginTestCases : TheoryData<string, string, bool, SignInResult, bool>

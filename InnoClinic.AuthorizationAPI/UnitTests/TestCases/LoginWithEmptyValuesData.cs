@@ -1,4 +1,6 @@
-﻿using DAL.Constants;
+﻿namespace UnitTests.TestData;
+
+using DAL.Constants;
 using UnitTests;
 
 public class LoginWithEmptyValuesData : TheoryData<string?, string?>

@@ -1,4 +1,6 @@
-﻿using BLL.DTO;
+﻿namespace UnitTests.TestData;
+
+using BLL.DTO;
 
 public class NullLoginFields : TheoryData<string>
 {
