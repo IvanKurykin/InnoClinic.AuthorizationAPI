@@ -53,6 +53,48 @@ public class AuthServiceTests
             new object[] { nameof(LogInDto.Role) }
         };
 
+    public static IEnumerable<object[]> RegisterWithEmptyValuesData =>
+    new List<object[]>
+    {
+        new object[] { null, null }, 
+        new object[] { null, Roles.Admin }, 
+        new object[] { TestConstans.TestUserPassword, null } 
+    };
+
+    public static IEnumerable<object[]> LoginWithEmptyValuesData =>
+        new List<object[]>
+        {
+        new object[] { null, null }, 
+        new object[] { null, Roles.Admin }, 
+        new object[] { TestConstans.TestUserEmail, null } 
+        };
+
+    [Theory]
+    [MemberData(nameof(RegisterWithEmptyValuesData))]
+    public async Task RegisterAsyncShouldHandleNullPasswordAndRole(string password, string role)
+    {
+        var dto = new RegisterDto
+        {
+            UserName = TestConstans.TestUserName,
+            Email = TestConstans.TestUserEmail,
+            Password = password,
+            Role = role
+        };
+
+        var user = new User { UserName = dto.UserName, Email = dto.Email };
+        var cancellationToken = new CancellationToken();
+
+        _mapperMock.Setup(x => x.Map<User>(dto)).Returns(user);
+        _authRepositoryMock.Setup(x => x.RegisterAsync(user, password ?? string.Empty, role ?? string.Empty, cancellationToken)).ReturnsAsync(IdentityResult.Success);
+
+        var result = await _authService.RegisterAsync(dto, cancellationToken);
+
+        result.Should().NotBeNull();
+        result.Succeeded.Should().BeTrue();
+
+        _authRepositoryMock.Verify(x => x.RegisterAsync(user, password ?? string.Empty, role ?? string.Empty,cancellationToken), Times.Once);
+    }
+
     [Theory]
     [MemberData(nameof(ValidRegisterData))]
     public async Task RegisterAsyncShouldReturnSuccessWhenValidData(string userName, string email, string password, string role)
@@ -92,6 +134,55 @@ public class AuthServiceTests
         var cancellationToken = new CancellationToken();
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => _authService.RegisterAsync(dto, cancellationToken));
+    }
+
+    [Theory]
+    [MemberData(nameof(LoginWithEmptyValuesData))]
+    public async Task LogInAsyncShouldThrowWhenEmailOrRoleIsNull(string email, string role)
+    {
+        var dto = new LogInDto
+        {
+            Email = email,
+            Password = TestConstans.TestUserPassword,
+            Role = role,
+            RememberMe = false
+        };
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>_authService.LogInAsync(dto, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(null, TestConstans.TestUserPassword, false, Roles.Admin)]
+    [InlineData(TestConstans.TestUserEmail, null, false, Roles.Admin)]
+    [InlineData(TestConstans.TestUserEmail, TestConstans.TestUserPassword, false, null)]
+    public async Task LogInAsyncShouldThrowForNullFields(string email, string password, bool rememberMe, string role)
+    {
+        var dto = new LogInDto
+        {
+            Email = email,
+            Password = password,
+            RememberMe = rememberMe,
+            Role = role
+        };
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>_authService.LogInAsync(dto, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(null, TestConstans.TestUserPassword, Roles.Admin)] 
+    [InlineData(TestConstans.TestUserEmail, null, Roles.Admin)] 
+    [InlineData(TestConstans.TestUserEmail, TestConstans.TestUserPassword, null)] 
+    public async Task LogInAsyncShouldPassEmptyStringToRepositoryWhenFieldIsNull(string email, string password, string role)
+    {
+        var dto = new LogInDto
+        {
+            Email = email,
+            Password = password,
+            Role = role,
+            RememberMe = false
+        };
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _authService.LogInAsync(dto, CancellationToken.None));
     }
 
     [Fact]
